@@ -1,5 +1,6 @@
 module Splines
 
-# package code goes here
+include("Bezier.jl")
+include("BSpline.jl")
 
 end # module
