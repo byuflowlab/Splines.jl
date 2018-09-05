@@ -1,4 +1,3 @@
-module BSpline
 """
     getSpanIndex(n::Int64,p::Int64,u,U)
 
@@ -257,5 +256,3 @@ function curveDerivativeControlPoints(n, p, U, P, d, r1, r2)
 end
 
 #There is another curveDerivatives algorithm in the book (Algorithm 3.4)
-
-end #module BSpline

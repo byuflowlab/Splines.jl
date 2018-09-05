@@ -14,13 +14,13 @@
     p = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition
     u = linspace(0,1,10) #global parameter
 
-    curve1 = Splines.Bezier.CoxdeBoorBezier1D(p, u)
+    curve1 = Splines.CoxdeBoorBezier1D(p, u)
     @test isapprox(curve1,checkdata, atol=1e15)
 
 
     curve2 = zeros(length(u),2)
     for i = 1:length(u)
-        curve2[i,:] = Splines.Bezier.deCasteljauBezier1D(p, u[i])
+        curve2[i,:] = Splines.deCasteljauBezier1D(p, u[i])
     end
     @test isapprox(curve2,checkdata, atol=1e15)
 

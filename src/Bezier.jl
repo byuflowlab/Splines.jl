@@ -1,4 +1,4 @@
-module Bezier
+export binomialcoeff
 
 """
 binomialcoeff(n,i)
@@ -52,5 +52,3 @@ function deCasteljauBezier1D(p, u)
     C = p[1,:]
 
 end
-
-end #module Bezier
