@@ -35,4 +35,4 @@ after_success:
   - julia -e 'cd(Pkg.dir("Splines")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
   #Documenter Stuff
   - julia -e 'Pkg.add("Documenter")'
-  - julia -e 'cd(Pkg.dir("Splines.jl")); include(joinpath("docs", "make.jl"))'
+  - julia -e 'cd(Pkg.dir("/Users/jmehr/Dropbox/PhD/Repositories/juliapackages/Splines.jl")); include(joinpath("docs", "make.jl"))'

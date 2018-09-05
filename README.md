@@ -5,3 +5,5 @@ This package is an implementation of various algorithms outlined in "The NURBS B
 The algorithms outlined in the text are for C/C++ code. The C language, and the theory as presented is zero indexed. In an effort to preserve the algorithms as displayed in the text, and to keep the native Julia 1-indexing, indices are typically left as-is from the text with the addition of a +1. Occasionally, an earlier operation automatically takes care of the extra +1; those cases, when caught, have been indicated by an inline comment.
 
 
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://USER_NAME.github.io/PACKAGE_NAME.jl/stable)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://USER_NAME.github.io/PACKAGE_NAME.jl/latest)
