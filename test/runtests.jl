@@ -7,3 +7,4 @@ end
 
 include("beziertests.jl")
 include("bsplinetests.jl")
+include("nurbstests.jl")
