@@ -8,6 +8,6 @@
     i = 5
     Pw = hcat(w.*P,w)
     println(Pw)
-    N = Splines.NURBS.curvePoint(n, p, U, Pw, u)
-
+    C = Splines.NURBS.curvePoint(n, p, U, Pw, u)
+    println(C)
 end
