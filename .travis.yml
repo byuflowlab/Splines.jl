@@ -4,7 +4,7 @@ os:
   - linux
   - osx
 julia:
-  - 0.6
+  - 0.7
   - nightly
 notifications:
   email: false
@@ -33,3 +33,6 @@ after_success:
   - julia -e 'cd(Pkg.dir("Splines")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
   # push coverage results to Codecov
   - julia -e 'cd(Pkg.dir("Splines")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  #Documenter Stuff
+  - julia -e 'Pkg.add("Documenter")'
+  - julia -e 'cd(Pkg.dir("Splines.jl")); include(joinpath("docs", "make.jl"))'
