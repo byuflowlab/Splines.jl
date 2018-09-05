@@ -2,19 +2,20 @@
     U = [0,0,0,1,2,3,4,4,5,5,5]
     u = 5/2
     p = 2
+    n = length(U)-p-1
     i = 5
 
-    span = Splines.BSpline.getSpanIndex(p,u,U)
+    span = Splines.BSpline.getSpanIndex(n,p,u,U)
     @test span == i
 
     u = 5
     i = 8
-    span = Splines.BSpline.getSpanIndex(p,u,U)
+    span = Splines.BSpline.getSpanIndex(n,p,u,U)
     @test span == i
 
     u = 0
     i = 3
-    span = Splines.BSpline.getSpanIndex(p,u,U)
+    span = Splines.BSpline.getSpanIndex(n,p,u,U)
     @test span == i
 
 end #Find Span Tests
