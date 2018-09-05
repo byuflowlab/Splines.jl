@@ -20,7 +20,7 @@ function getSpanIndex(p::Int64,u,U)
             end #if low
             mid = div((lo+hi),2)
         end #while not found
-        return mid+1
+        return mid
     end #if not end
 end
 
@@ -48,13 +48,20 @@ function basisFunctions(i,u,p,U)
 end
 
 """
-    basisFunctionsDerivatives(i,u,p,U)
+    basisFunctionsDerivatives(i,u,p,n,U)
 
-Calculate the non-vanishing basis function of the B-Spline of order p, defined by knots U at knot u.
+Calculate the non-vanishing basis functions and derivatives of the B-Spline of order p, defined by knots U at parametric location u.
+
+#### Inputs
+- i : knot span containing u
+- u : parametric point of interest
+- p : the curve order
+- n : the max derivative order (n ≦ p)
+- U : the knot vector
 """
-function basisFunctionsDerivatives(i,u,p,U)
+function basisFunctionsDerivatives(i, u, p, n, U)
     #Initialize
-    n = length(U)-p-1
+    # n = length(U)-p-1
     ndu = ones(p+1,p+1)
     a = zeros(p+1,p+2)
     ders = zeros(p+1,p+1)
@@ -165,47 +172,91 @@ function basisFunctionsDerivatives(i,u,p,U)
         end
     end
 
-    # #---Compute derivatives the long way
-    # display(ndu)
-    # println()
-    # ders[1,:] = ndu[:,p+1]
-    # for r = 2:p+1
-    #     println("r = ", r)
-    #     for k = 1:p
-    #         println("k = ", k)
-    #         a[1,1] = 1.0
-    #         for j=1:k
-    #             println("j = ", j)
-    #             println("a[$k,$j]")
-    #             if j==1 && k>1
-    #                 println("j==1 && k!=1")
-    #                 a[k,j] = a[k-1,1]/(U[i+p-k+1] - U[i])
-    #             elseif k>1 && j>1 && j!=k
-    #                 println("k>1 && j>1 && j!=k")
-    #                 a[k,j] = (a[k-1,j] - a[k-1,j-1])/(U[i+p+j-k+1] - U[i+j])
-    #             elseif k>1 && j==k
-    #                 println("k!=1 && j==k")
-    #                 a[k,j] = -a[k-1,k-1]/(U[i+p+1] - U[i+k])
-    #             end
-    #             if a[k,j] == Inf || a[k,j] == -Inf || isnan(a[k,j])
-    #                 println("a[k,j] == inf or nan")
-    #                 a[k,j] = 0.0
-    #             end
-    #             println("a[k,j] = ", a[k,j])
-    #             if i+j > i+1
-    #                 N = 0
-    #             else
-    #                 N = ndu[i+j,p-k]
-    #             end
-    #             ders[r,k] += a[k,j]*N
-    #         end
-    #         ders[r,k] *= factorial(p)/factorial(p-k)
-    #     end
-    # end
-
-
     return ders
 
 end #function
+
+"""
+    curveDerivatives1(n,p,U,P,u,d)
+
+Compute curve derivatives up do the dth derivative at parametric point u.
+
+#### Inputs
+- n : the number of control points is n+1
+- p : the degree of the curve
+- U : the knot vector
+- P : the control points
+- u : the parametric point of interest
+- d : derivative order (0 ≤ k ≦ d)
+"""
+function curveDerivatives1(n, p, U, P, u, d)
+    du = min(d,p)
+    CK = zeros(d,2)
+    span = getSpanIndex(p,u,U)
+    # println("span: ",span)
+    nders = basisFunctionsDerivatives(span,u,p,du,U)
+    # println("ders:")
+    # display(nders)
+    # println()
+    for k=1:d
+        for j=0:p
+            # println("nders[k,j] = ",  nders[k+1,j+1])
+            # println("P[span-p+j] = ", P[span-p+j+1,:])
+            CK[k,:] += nders[k+1,j+1]*P[span-p+j+1,:]
+        end
+    end
+
+    return CK
+
+end
+
+"""
+    curveDerivativeControlPoints(n, p, U, P, d, r1, r2)
+
+Compute control points of curve derivatives.
+
+#### Inputs
+- n : the number of control points is n+1
+- p : the degree of the curve
+- U : the knot vector
+- P : the control points
+- u : the parametric point of interest
+- d : derivative order (0 ≤ k ≦ d)
+- r1 : first control point index
+- r2 : last control point index
+"""
+function curveDerivativeControlPoints(n, p, U, P, d, r1, r2)
+    r = r2-r1
+    # println("r2-r1 = $r")
+    PK = zeros(d+1,length(P[1,:]),r+1)
+    # println("size of PK = ", size(PK))
+    for i=0:r
+        PK[0+1,:,i+1] = P[r1+i+1,:]
+    end
+    # println("PK[0,:] = ")
+    # display(PK)
+    # println()
+    if d >= 1
+        for k=1:d
+            # println("k = $k")
+            tmp = p-k+1
+            # println("tmp = $tmp")
+            for i=0:r-k
+                # println("i = $i")
+                PK[k+1,:,i+1] = tmp*(PK[k-1+1,:,i+1+1] - PK[k-1+1,:,i+1])/(U[r1+i+p+1+1] - U[r1+i+k+1])
+                # println("PKi1 = ", PK[k-1+1,:,i+1+1])
+                # println("PKi = ", PK[k-1+1,:,i+1])
+                # println("Uip1 = ", U[r1+i+p+1+1])
+                # println("Uik = ", U[r1+i+k+1])
+                # println("PK[k,i] = ", PK[k+1,:,i+1])
+            end
+        end
+    end
+
+    return PK
+
+end
+
+#There is another curveDerivatives algorithm in the book (Algorithm 3.4)
 
 end #module BSpline
