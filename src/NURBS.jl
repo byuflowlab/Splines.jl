@@ -1,4 +1,9 @@
+export curvePoint
+
 """
+    curvePoint(n, p, U, Pw, u)
+
+Compute point on rational B-Spline curve.
 """
 function curvePoint(n, p, U, Pw, u)
     span = getSpanIndex(n,p,u,U)

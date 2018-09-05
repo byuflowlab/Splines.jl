@@ -1,4 +1,4 @@
-export binomialcoeff
+export binomialcoeff, bernsteincoeff, CoxdeBoorBezier1D, deCasteljauBezier1D
 
 """
     binomialcoeff(n,i)

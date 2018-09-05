@@ -1,3 +1,4 @@
+export getSpanIndex, basisFunctions, basisFunctionsDerivatives, curveDerivatives1, curveDerivativeControlPoints
 """
     getSpanIndex(n::Int64,p::Int64,u,U)
 
