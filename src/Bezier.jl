@@ -1,9 +1,9 @@
 export binomialcoeff
 
 """
-binomialcoeff(n,i)
+    binomialcoeff(n,i)
 
-    Calculate Binomial Coefficient
+Calculate Binomial Coefficient
 """
 function binomialcoeff(n, i)
     return factorial(n)./(factorial(i).*factorial(n-i))
