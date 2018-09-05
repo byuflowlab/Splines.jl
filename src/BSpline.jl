@@ -4,8 +4,7 @@ module BSpline
 
 Complete binary search to find span index of vector, U, in which knot, u, lies.
 """
-function getSpanIndex(p::Int64,u,U)
-    n = length(U)-p-1
+function getSpanIndex(n::Int64,p::Int64,u,U)
     if u == U[n+1]
         return n #special case
     else
@@ -192,7 +191,7 @@ Compute curve derivatives up do the dth derivative at parametric point u.
 function curveDerivatives1(n, p, U, P, u, d)
     du = min(d,p)
     CK = zeros(d,2)
-    span = getSpanIndex(p,u,U)
+    span = getSpanIndex(n,p,u,U)
     # println("span: ",span)
     nders = basisFunctionsDerivatives(span,u,p,du,U)
     # println("ders:")
