@@ -1,10 +1,10 @@
 export getSpanIndex, basisFunctions, basisFunctionsDerivatives, curveDerivatives1, curveDerivativeControlPoints
 """
-    getSpanIndex(n::Int64,p::Int64,u,U)
+    getspanindex(n,p,u,U)
 
-Complete binary search to find span index of vector, U, in which knot, u, lies.
+Complete binary search to find span index of vector, U, in which knot, u, lies. (NURBS A2.1)
 """
-function getSpanIndex(n::Int64,p::Int64,u,U)
+function getspanindex(n,p,u,U)
     if u == U[n+1]
         return n #special case
     else
@@ -26,9 +26,9 @@ end
 """
     basisFunctions(i,u,p,U)
 
-Calculate the non-vanishing basis function of the B-Spline of order p, defined by knots U at knot u.
+Calculate the non-vanishing basis function of the B-Spline of order p, defined by knots U at knot u. (NURBS, A2.2)
 """
-function basisFunctions(i,u,p,U)
+function basisfunctions(i,u,p,U)
     N = ones(p+1)
     left = zeros(p+1)
     right = zeros(p+1)
@@ -47,9 +47,9 @@ function basisFunctions(i,u,p,U)
 end
 
 """
-    basisFunctionsDerivatives(i,u,p,n,U)
+    basisfunctionsderivatives(i,u,p,n,U)
 
-Calculate the non-vanishing basis functions and derivatives of the B-Spline of order p, defined by knots U at parametric location u.
+Calculate the non-vanishing basis functions and derivatives of the B-Spline of order p, defined by knots U at parametric location u. (NURBS, A2.3)
 
 #### Inputs
 - i : knot span containing u
@@ -58,7 +58,7 @@ Calculate the non-vanishing basis functions and derivatives of the B-Spline of o
 - n : the max derivative order (n ≦ p)
 - U : the knot vector
 """
-function basisFunctionsDerivatives(i, u, p, n, U)
+function basisfunctionsderivatives(i, u, p, n, U)
     #Initialize
     # n = length(U)-p-1
     ndu = ones(p+1,p+1)
@@ -176,9 +176,9 @@ function basisFunctionsDerivatives(i, u, p, n, U)
 end #function
 
 """
-    curveDerivatives1(n,p,U,P,u,d)
+    curvederivatives1(n,p,U,P,u,d)
 
-Compute curve derivatives up do the dth derivative at parametric point u.
+Compute curve derivatives up do the dth derivative at parametric point u. (NURBS, A3.2)
 
 #### Inputs
 - n : the number of control points is n+1
@@ -188,7 +188,7 @@ Compute curve derivatives up do the dth derivative at parametric point u.
 - u : the parametric point of interest
 - d : derivative order (0 ≤ k ≦ d)
 """
-function curveDerivatives1(n, p, U, P, u, d)
+function curvederivatives1(n, p, U, P, u, d)
     du = min(d,p)
     CK = zeros(d,2)
     span = getSpanIndex(n,p,u,U)
@@ -210,9 +210,9 @@ function curveDerivatives1(n, p, U, P, u, d)
 end
 
 """
-    curveDerivativeControlPoints(n, p, U, P, d, r1, r2)
+    curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
 
-Compute control points of curve derivatives.
+Compute control points of curve derivatives. (NURBS, A3.3)
 
 #### Inputs
 - n : the number of control points is n+1
@@ -224,7 +224,7 @@ Compute control points of curve derivatives.
 - r1 : first control point index
 - r2 : last control point index
 """
-function curveDerivativeControlPoints(n, p, U, P, d, r1, r2)
+function curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
     r = r2-r1
     # println("r2-r1 = $r")
     PK = zeros(d+1,length(P[1,:]),r+1)
@@ -256,4 +256,4 @@ function curveDerivativeControlPoints(n, p, U, P, d, r1, r2)
 
 end
 
-#There is another curveDerivatives algorithm in the book (Algorithm 3.4)
+#There is another curvederivatives algorithm in the book (Algorithm 3.4)

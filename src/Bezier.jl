@@ -1,54 +1,79 @@
-export binomialcoeff, bernsteincoeff, CoxdeBoorBezier1D, deCasteljauBezier1D
-
 """
-    binomialcoeff(n,i)
+    binomialcoeff(n, i)
 
-Calculate Binomial Coefficient
+Calculate the Binomial Coefficient defined as:
+
+```math
+\\binom{n}{i} = \\frac{n!}{i!(n-1)!}
+```
 """
 function binomialcoeff(n, i)
     return factorial(n)./(factorial(i).*factorial(n-i))
 end
 
 """
-    bernsteincoeff(n,i)
+    bernsteincoeff(u, n, i)
 
-Calculate Bernstein Coefficient. (NURBS, eqn 1.8)
+Calculate Bernstein Coefficient (Bezier Basis Function) defined as:
+
+```math
+B_{i,n}(u) = \\binom{n}{i} u^i (1-u)^{n-1}
+```
+
+at parametric point, \$u\$, where \$ 0 \\leq u \\leq 1 \$. \$u\$ may either be a single value or an array.
+
+(see NURBS, eqn 1.8)
 """
 function bernsteincoeff(u, n, i)
     return binomialcoeff(n,i) .* u.^i .* (1-u).^(n-i)
 end
 
 """
-    CoxdeBoorBezier1D(p, u)
+    simple_bezier1D(P, u)
 
-Calculate a point along a Bezier curve at the parametric point, u, based on the control points P using Cox-de Boor Algorithm.
+Calculate a point along a Bezier curve at the parametric point, \$u\$, based on the control points  \$\\mathbf{P}\$ where the Bezier curve, \$\\mathbf{C}(u)\$ is defined as:
+
+```math
+\\mathbf{C}(u) = \\sum_{i=0}^n B_{i,n}(u) \\mathbf{P}_i~,~~~~ 0 \\leq u \\leq 1
+```
+where \$ B \$ is the basis (Bernstein Coefficient) at parametric point, \$u\$, as calculated from ```bernsteincoeff```, and n is the number of control points in vector \$\\mathbf{P}\$. Again, \$u\$ may either be a single value or an array.
+
+(see NURBS eqn 1.7)
 """
-function CoxdeBoorBezier1D(p, u)
-    n = length(p[:,1])
+function simple_bezier1D(P, u)
+    n = length(P[:,1])
     bc = zeros(length(u),n)
 
     for i=1:n
         bc[:,i] = bernsteincoeff(u, n, i)
     end
 
-    C = bc*p
+    C = bc*P
 
     return C
 end
 
 
 """
-    deCasteljauBezier1D(p, u)
+    decasteljau_bezier1D(P, u)
 
-Calculate a point along a Bezier curve at the parametric point, u, based on the control points P using deCasteljau's Algorithm.
+Calculate a point along a Bezier curve at the parametric point, \$u_0\$, based on the control points \$\\mathbf{P}\$ using deCasteljau's Algorithm:
+
+```math
+\\mathbf{P}_{k,i}(u_0) = (1- u_0)\\mathbf{P}_{k-1,i}(u_0) + u_0 \\mathbf{P}_{k-1,i+1}(u_0)
+```
+for \$ k = 1,...,n\$ and \$i = 0,...,n-k\$, where \$u_0\$ is any single value from 0 to 1.
+
+(see NURBS, eqn 1.12 and A1.5)
 """
-function deCasteljauBezier1D(p, u)
-    n = length(p[:,1])
+function decasteljau_bezier1D(P, u)
+    n = length(P[:,1])
+    Q = copy(P)
     for k=1:n
         for i=1:n-k
-            p[i,:] = (1-u)*p[i,:] + u*p[i+1,:]
+            Q[i,:] = (1-u)*Q[i,:] + u*Q[i+1,:]
         end
     end
-    C = p[1,:]
+    C = Q[1,:]
 
 end

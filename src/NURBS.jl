@@ -1,11 +1,11 @@
 export curvePoint
 
 """
-    curvePoint(n, p, U, Pw, u)
+    curvepoint(n, p, U, Pw, u)
 
-Compute point on rational B-Spline curve.
+Compute point on rational B-Spline curve. (NURBS, A4.1)
 """
-function curvePoint(n, p, U, Pw, u)
+function curvepoint(n, p, U, Pw, u)
     span = getSpanIndex(n,p,u,U)
     # println("span = ", span)
     N = basisFunctions(span,u,p,U)

@@ -5,17 +5,17 @@
     n = length(U)-p-1
     i = 5
 
-    span = Splines.getSpanIndex(n,p,u,U)
+    span = Splines.getspanindex(n,p,u,U)
     @test span == i
 
     u = 5
     i = 8
-    span = Splines.getSpanIndex(n,p,u,U)
+    span = Splines.getspanindex(n,p,u,U)
     @test span == i
 
     u = 0
     i = 3
-    span = Splines.getSpanIndex(n,p,u,U)
+    span = Splines.getspanindex(n,p,u,U)
     @test span == i
 
 end #Find Span Tests
@@ -26,10 +26,10 @@ end #Find Span Tests
     p = 2
     i = 5
     n = length(U)-p-1
-    bases1 = Splines.basisFunctions(i,u,p,U)
+    bases1 = Splines.basisfunctions(i,u,p,U)
     @test isapprox([1/8,6/8,1/8],bases1,atol=1e15)
     # println("bases: ", bases1)
-    derivatives = Splines.basisFunctionsDerivatives(i,u,p,n,U)
+    derivatives = Splines.basisfunctionsderivatives(i,u,p,n,U)
     # println("derivatives: ")
     # display(derivatives)
     # println()
@@ -51,7 +51,7 @@ end #Basis Functions Tests
     n = length(U)-p-1
     P = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]
     d = 1
-    curveDerivatives = Splines.curveDerivatives1(n, p, U, P, u, d)
+    curveDerivatives = Splines.curvederivatives1(n, p, U, P, u, d)
     # println("curveDerivatives")
     # display(curveDerivatives)
     # println()
@@ -70,7 +70,7 @@ end #Basis Functions Tests
     n = length(P[:,1])-1
     r1 = 0
     r2 = n
-    cprime = Splines.curveDerivativeControlPoints(n, p, U, P, d, r1, r2)
+    cprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
 
     cp = [15/2*(P[2,:] - P[1,:]), 5*(P[3,:] - P[2,:]), 5*(P[4,:] - P[3,:]), 5*(P[5,:] - P[4,:]), 15/2*(P[6,:] - P[5,:]), 15/2*(P[7,:] - P[6,:])]
 

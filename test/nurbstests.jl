@@ -8,7 +8,7 @@
     i = 5
     Pw = hcat(w.*P,w)
     # println(Pw)
-    C = Splines.curvePoint(n, p, U, Pw, u)
+    C = Splines.curvepoint(n, p, U, Pw, u)
     # println(C)
     @test C == [7/5, 6/5]
 end
