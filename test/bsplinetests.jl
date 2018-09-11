@@ -3,7 +3,7 @@
     u = 5/2
     p = 2
     n = length(U)-p-1
-    i = 5
+    i = 4
 
     span = Splines.getspanindex(n,p,u,U)
     @test span == i
@@ -14,7 +14,7 @@
     @test span == i
 
     u = 0
-    i = 3
+    i = 2
     span = Splines.getspanindex(n,p,u,U)
     @test span == i
 
@@ -27,7 +27,7 @@ end #Find Span Tests
     i = 5
     n = length(U)-p-1
     bases1 = Splines.basisfunctions(i,u,p,U)
-    @test isapprox([1/8,6/8,1/8],bases1,atol=1e15)
+    @test [1/8,6/8,1/8] == bases1
     # println("bases: ", bases1)
     derivatives = Splines.basisfunctionsderivatives(i,u,p,n,U)
     # println("derivatives: ")
@@ -36,11 +36,10 @@ end #Find Span Tests
     # println("actual:")
     # display([1/8 6/8 1/8; -1/2 0 1/2; 1 -2 1])
     # println()
-    @test isapprox([1/8, 6/8, 1/8], derivatives[1,:],atol=1e15)
-    @test isapprox([-1/2, 1.0], derivatives[2:3,1],atol=1e15)
-    @test isapprox([0.0, -2.0], derivatives[2:3,2],atol=1e15)
-    @test isapprox([1/2, 1.0], derivatives[2:3,3],atol=1e15)
-
+    @test [1/8, 6/8, 1/8] == derivatives[1,:]
+    @test [-1/2, 1.0] == derivatives[2:3,1]
+    @test [0.0, -2.0] == derivatives[2:3,2]
+    @test [1/2, 1.0] == derivatives[2:3,3]
 
 end #Basis Functions Tests
 
@@ -58,7 +57,7 @@ end #Basis Functions Tests
     # println("actual")
     # display(-1/2*P[3,:] + 1/2*P[5,:])
     # println()
-    @test isapprox(-1/2*P[3,:] + 1/2*P[5,:], curveDerivatives',atol=1e15)
+    @test -1/2*P[3,:] + 1/2*P[5,:] == curveDerivatives[2,:]
 
 
     U = [0,0,0,0,2/5,3/5,3/5,1,1,1,1]
