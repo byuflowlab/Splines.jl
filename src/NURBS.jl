@@ -67,7 +67,7 @@ end
 
 
 """
-    knotinsertion(np, p, UP, Pw, u, k, s, r)
+    curveknotinsertion(np, p, UP, Pw, u, k, s, r)
 
 Compute a new curve from knot insertion. Using the formula:
 
