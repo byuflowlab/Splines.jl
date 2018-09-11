@@ -99,7 +99,7 @@ Inputs:
 
 Outputs:
 - nq : the number of control points minus 1 (the index of the last control point) after insertion
-- UQ : the knot vecotr after insertion
+- UQ : the knot vector after insertion
 - Qw : the set of weighted control points and weights after insertion
 """
 function curveknotinsertion(np, p, UP, Pw, u, k, s, r)
