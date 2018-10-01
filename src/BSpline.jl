@@ -4,8 +4,10 @@
 Complete binary search to find span index of vector, U, in which knot, u, lies. (NURBS A2.1)
 """
 function getspanindex(n, p, u, U)
+    # println("Getting Span Index, u = $u")
     if u == U[n+1+1]
         # println("Special case")
+        # println("Returning Span Index")
         return n #special case
     else
         lo = p+1
@@ -19,6 +21,7 @@ function getspanindex(n, p, u, U)
             end #if low
             mid = div((lo+hi), 2)
         end #while not found
+        # println("Returning Span Index")
         return mid-1
     end #if not end
 end
@@ -26,7 +29,23 @@ end
 """
     basisFunctions(i, u, p, U)
 
-Calculate the non-vanishing basis function of the B-Spline of order p, defined by knots U at knot u. (NURBS, A2.2)
+Calculate the non-vanishing basis functions of the B-Spline of order p, defined by knots U at knot u.
+
+The formula for the basis functions is:
+
+```math
+N_{i,0}(u) =
+\\begin{cases}
+      1 & \\textrm{if } u_i \\leq u \\leq u_{i+1} \\\\
+      0 & \\textrm{otherwise}
+\\end{cases}
+```
+
+```math
+N_{i,p}(u) = \\frac{u-u_i}{u_{i+p} - u_i} N_{i,p-1}(u) - \\frac{u_{i+p+1} - u}{u_{i+p+1} - u_{i+1}} N_{i+1,p-1}(u)
+```
+
+Note that the algorithm used in ```basisFunctions``` removes redunant calculation and potential division by zero (see NURBS, eqn 2.5 and A2.2).
 """
 function basisfunctions(i, u, p, U)
     N = ones(p+1)
@@ -52,7 +71,15 @@ end
 """
     basisfunctionsderivatives(i, u, p, n, U)
 
-Calculate the non-vanishing basis functions and derivatives of the B-Spline of order p, defined by knots U at parametric location u. (NURBS, A2.3)
+Calculate the non-vanishing basis functions and derivatives of the B-Spline of order p, defined by knots U at parametric location u.
+
+The basis function derivative is given by
+
+```math
+N_{i,p}^{'} = \\frac{p}{u_{i+p} - u_i} N_{i,p-1}(u) - \\frac{p}{u_{i+p+1} - u_{i+1}} N_{i+1,p-1}(u)
+```
+
+(see NURBS, eqn 2.7 and A2.3)
 
 Inputs:
 
@@ -182,7 +209,7 @@ end #function
 """
     curvederivatives1(n, p, U, P, u, d)
 
-Compute curve derivatives up do the dth derivative at parametric point u. (NURBS, A3.2)
+Compute a curve point and its derivatives up do the dth derivative at parametric point u. (NURBS, A3.2)
 
 #### Inputs
 - n : the number of control points is n+1
@@ -216,7 +243,21 @@ end
 """
     curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
 
-Compute control points of curve derivatives. (NURBS, A3.3)
+Compute control points of curve derivatives:
+
+```math
+\\mathbf{C}^{(k)}(u) = \\sum_{i=0}^{n-k}N_{i,p-k}(u) \\mathbf{P}_i^{(k)}
+```
+with
+```math
+\\mathbf{P}_i^{(k)} =
+\\begin{cases}
+    \\mathbf{P}_i & k=0 \\\\
+    \\frac{p-k+1}{u_{i+p+1}-u_{i+k}}\\left(\\mathbf{P}_{i+1}^{(k)} - \\mathbf{P}_i^{(k)} \\right) & k > 0
+\\end{cases}
+```
+
+(see NURBS, eqn 3.8 and A3.3)
 
 #### Inputs
 - n : the number of control points is n+1
