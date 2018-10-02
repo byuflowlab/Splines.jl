@@ -323,12 +323,16 @@ end
 """
     degreeelevatecurve(n,p,U,Pw,t)
 
-Raise degree of spline from p to p\$+t\$, \$ t \\geq 1 \$ by computing the new control point vector and knot vector.  Using the following equation to degree elevate the bezier segments.
+Raise degree of spline from p to p\$+t\$, \$ t \\geq 1 \$ by computing the new control point vector and knot vector.
+
+Knots are inserted to divide the spline into equivalent Bezier Curves.  These curves are then degree elevated using the following equation.
 
 ```math
 \\mathbf{P}^t_i = \\sum^{\\textrm{min}(p,i)}_{j=\\textrm{max}(0,i-t)} \\frac{\\binom{p}{j} \\binom{t}{i-j} \\mathbf{P}_j}{\\binom{p+t}{i}}~,~~~~~i=0,...,p+t
 ```
 where \$ \\mathbf{P}^t_i \$ are the degree elevated control points after \$t\$-degree elevations
+
+Finally, the excess knots are removed and the degree elevated spline is returned.
 
 (see NURBS eqn 5.36, A5.9)
 
@@ -346,22 +350,24 @@ Outputs:
 """
 function degreeelevatecurve(n,p,U,Pw,t)
     m = n+p+1
-    # println("m = ", m)
     ph = p+t
     ph2 = Int(floor(ph/2))
+
     #initialize in outer scope:
     oldr = 0
     ub = 0
+
     #initialize local arrays
-    bezalfs = zeros(p+t+1,p+1)
-    bpts = zeros(p+1,length(Pw[1,:]))
-    ebpts = zeros(p+t+1,length(Pw[1,:]))
-    nextbpts = zeros(p-1,length(Pw[1,:]))
-    alfs = zeros(p-1)
+    bezalfs = zeros(p+t+1,p+1) #coefficients for degree elevating the bezier segments
+    bpts = zeros(p+1,length(Pw[1,:])) #pth-degree bezier control points of the current section
+    ebpts = zeros(p+t+1,length(Pw[1,:])) #(p+t)th-degree bezier control points of the current section
+    nextbpts = zeros(p-1,length(Pw[1,:])) #leftmost control points of next bezier segement
+    alfs = zeros(p-1) #knot insertion alphas.
+
     #initialize outputs:
     s = length(unique(U)) - 2 #number of unique internal knots
-    Uh = ones( length(U) + t*(s+2) ) #mhat is m + (s+2)xt
-    Qw = ones( length(Pw[:,1]) + t*(s+1), length(Pw[1,:]) ) #nhat 7is n+(s+1)xt
+    Uh = ones( length(U) + t*(s+2) ) #mhat eqn 5.33 is m + (s+2)xt
+    Qw = ones( length(Pw[:,1]) + t*(s+1), length(Pw[1,:]) ) #nhat eqn 5.32 is n+(s+1)xt
 
     #compute bezier degree elevation coefficients
     bezalfs[ph+1,p+1] = 1.0 #bezalfs are coefficients for degree elevating the Bezier segments
@@ -369,7 +375,7 @@ function degreeelevatecurve(n,p,U,Pw,t)
     for i=1:ph2
         inv = 1.0/binomialcoeff(ph,i)
         for j=Int(max(0,i-t)):Int(min(p,i))
-            bezalfs[i+1,j+1] = inv*binomialcoeff(p,j)*binomialcoeff(t,i-j)
+            bezalfs[i+1,j+1] = inv*binomialcoeff(p,j)*binomialcoeff(t,i-j) #from eqn 5.36
         end
     end
     for i = ph2+1:ph-1
@@ -379,64 +385,52 @@ function degreeelevatecurve(n,p,U,Pw,t)
     end
     mh = ph
     kind = ph+1
-    # println("386: kind = ", kind)
     r = -1
     a = p
     b = p+1
     cind = 1
     ua = U[0+1]
+
+    #first new control point is first old control point
     Qw[0+1,:] = Pw[0+1,:]
-    # println("393 - Qw[$(0+1)] = ", Qw[0+1,:])
-    # println("394 - Qw = ", Qw)
-    # println("ph = ", ph)
+
+    #fill in first p+t new U vector points (same as old vector with +t multiplicity)
     for i=0:ph
-        # println("i = ", i)
         Uh[i+1] = ua
-        # println("Uh[$(i+1)] = ", Uh[i+1])
     end
+
     #initialize first bezier segment
     for i=0:p
         bpts[i+1,:] = Pw[i+1,:] #bpts are the pth-degree bezier control points of the current segment
-        # println("402 - bpts[$(i+1)] = ", bpts[i+1,:])
-        # println("403 - Pw[$(i+1)] = ", Pw[i+1,:])
     end
-    # println("408 - bpts = ", bpts)
-    while b<m #big loop through knot vector
-        # println("408 - b = ", b)
-        # println("410 - U[$(b+1)] = ", U[b+1])
-        # println("411 - U[$(b+1+1)] = ", U[b+1+1])
+
+    #big loop through knot vector starting after first elements of Qw and Uh vectors.
+    while b<m
         i = b
-        while b<m && U[b+1] == U[b+1+1]
-            # println("412 - U[$(b+1)] = ", U[b+1])
+        while b<m && U[b+1] == U[b+1+1] #incrememnt b for knots with multiplicities.
             b += 1
         end
         mul = b-i+1
-        # println("418 - mul = ", mul)
         mh += mul + t
-        # println("420 - mh = ", mh)
         ub = U[b+1]
-        # println("422 - ub = ", ub)
         oldr = r
-        # println("424 - oldr = ", oldr)
         r = p-mul
-        # println("424 - r = ", r)
+
         #insert knot u(b) r times
         if oldr > 0
             lbz = Int(floor((oldr + 2)/2))
-            # println("414: lbz = ", lbz)
         else
             lbz = 1
-            # println("417: lbz = ", lbz)
         end
         if r>0
-            rbz = Int(floor(ph-(r+1)/2))
+            rbz = Int(ph-floor((r+1)/2))
         else
             rbz = ph
         end
+
+        #insert knot to get bezier segment
         if r>0
-            #insert knot to get bezier segment
             numer = ub - ua
-            # println("443 - numer = ", numer)
             for k=p:-1:mul+1
                 alfs[k-mul-1+1] = numer/(U[a+k+1]-ua) #knot insertion alphas
             end
@@ -445,64 +439,46 @@ function degreeelevatecurve(n,p,U,Pw,t)
                 s = mul+j
                 for k=p:-1:s
                     bpts[k+1,:] = alfs[k-s+1]*bpts[k+1,:] + (1.0-alfs[k-s+1])*bpts[k-1+1,:]
-                    # println("440 - bpts[$(k-1+1)] = ", bpts[k-1+1,:])
-                    # println("441 - bpts[$(k+1)] = ", bpts[k+1,:])
                 end #for
-
                 nextbpts[save+1,:] = bpts[p+1,:] #nextbpts are the leftmost control points of the next bezier segment
-                # println("445 - nextbpts[$(save+1)] = ", nextbpts[save+1,:])
             end #for
-            # println("460 - bpts = ", bpts)
-            # println("461 - nextbpts = ", nextbpts)
         end  #insert knot if
-        for i=lbz:ph #degree elevate bezier
+
+        #degree elevate bezier
+        for i=lbz:ph
             #only points lbz,...,ph are used below
             ebpts[i+1,:] = 0.0 #ebpts are the (p+t)th-degree bezier control points of the current segment.
             for j = Int(max(0,i-t)):Int(min(p,i))
                 ebpts[i+1,:] += bezalfs[i+1,j+1]*bpts[j+1,:]
             end
-            # println("471 - ebpts[$(i+1)] = ", ebpts[i+1,:])
         end #for; degree elevation
-        # println("473 - ebpts = ", ebpts)
+
+        #must remove knot u=U[a] oldr times
         if oldr > 1
-            #must remove knot u=U[a] oldr times
-            # println("447: kind = ", kind)
             first = kind-2
             last = kind
             den = ub-ua
             bet = (ub-Uh[kind-1+1])/den
-            if oldr-1 > 1
+
+            #knot removal loop
+            if oldr-1 >= 1 #need to make sure this is true since julia does a loop no matter what, when C evaluates condition first.
                 for tr=1:oldr-1
-                    #knot removal loop
                     i = first
                     j = last
                     kj = j-kind+1
-                    while j-1 > tr #loop and compute the new control points for one removal step
+
+                    #loop and compute the new control points for one removal step
+                    while j-i > tr
                         if i < cind
                             alf = (ub - Uh[i+1])/(ua-Uh[i+1])
                             Qw[i+1,:] = alf*Qw[i+1,:] + (1.0-alf)*Qw[i-1+1,:]
-                            # println("476 - Qw[$(i+1)] = ", Qw[i-1+1,:])
-                            # println("477 - Qw[$(i+1)] = ", Qw[i-1+1,:])
                         end #if
-                        # println("lbz = ", lbz)
                         if j >= lbz
-                            # println("tr ", tr)
-                            # println("kind ", kind)
-                            # println("ph ", ph)
-                            # println("oldr ", oldr)
-                            # println("j ", j)
-                            # println("kind-ph+oldr ", kind-ph+oldr)
-                            # println("j-tr ", j-tr)
                             if j-tr <= kind-ph+oldr
                                 gam = (ub-Uh[j-tr+1])/den
-                                # println("kj+1 = ", kj+1)
                                 ebpts[kj+1,:] = gam*ebpts[kj+1,:]+(1.0-gam)*ebpts[kj+1+1,:]
-                                # println("488 - ebpts[$(kj+1)] = ", ebpts[kj+1,:])
-                                # println("489 - ebpts[$(kj+1+1)] = ", ebpts[kj+1+1,:])
                             else
                                 ebpts[kj+1,:] = bet*ebpts[kj+1,:]+(1.0-bet)*ebpts[kj+1+1,:]
-                                # println("492 - ebpts[$(kj+1)] = ", ebpts[kj+1,:])
-                                # println("493 - ebpts[$(kj+1+1)] = ", ebpts[kj+1+1,:])
                             end #if
                         end #if
                         i += 1
@@ -511,30 +487,26 @@ function degreeelevatecurve(n,p,U,Pw,t)
                     end #while
                     first -= 1
                     last += 1
-                end #for
+                end #for tr
             end #if oldr is big enough
         end #if; remove knot u=U[a]
-        if a != p #load the knot ua
+
+        #load the knot ua
+        if a != p
             for i=0:ph-oldr-1
                 Uh[kind+1] = ua
-                # println("Uh[$(kind+1)] = ", Uh[kind+1])
                 kind += 1
-                # println("491: kind = ", kind)
             end #for
         end #if
-        for j=lbz:rbz #load ctrl pts into Qw
-            # println("j = ", j)
-            # println("cind = ", cind)
+
+        #load ctrl pts into Qw
+        for j=lbz:rbz
             Qw[cind+1,:] = ebpts[j+1,:]
-            # println("517 - ebpts[$(cind+1)] = ", ebpts[j+1,:])
-            # println("518 - Qw[$(cind+1)] = ", Qw[j+1,:])
-            # println("518 - Qw = ", Qw)
             cind += 1
         end
+
+        #set up for next pass through loop
         if b < m
-            # println("503 - b = ", b)
-            # println("503 - m = ", m)
-            #set up for next pass through loop
             for j=0:r-1
                 bpts[j+1,:] = nextbpts[j+1,:]
             end
@@ -543,17 +515,13 @@ function degreeelevatecurve(n,p,U,Pw,t)
             end
             a = b
             b += 1
-            # println("541 - iter b = ", b)
             ua = ub
-        else
-            #end knot
+        else #end knot
             for i=0:ph
                 Uh[kind+i+1] = ub
-                # println("Uh[$(kind+i+1)] = ", Uh[kind+i+1])
             end
         end
     end #while b<m
-    # println("551 - end b = ", b)
     nh = mh-ph-1
 
 return nh, Uh, Qw
