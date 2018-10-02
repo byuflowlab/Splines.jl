@@ -12,7 +12,7 @@
     1.0 0.0]
 
     P = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition
-    u = linspace(0,1,10) #global parameter
+    u = range(0,stop=1,length=10) #global parameter
 
     curve1 = Splines.simple_bezier1D(P, u)
 

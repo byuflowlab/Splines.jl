@@ -25,7 +25,7 @@ at parametric point, \$u\$, where \$ 0 \\leq u \\leq 1 \$. \$u\$ may either be a
 (see NURBS, eqn 1.8)
 """
 function bernsteincoeff(u, n, i)
-    return binomialcoeff(n, i) .* u.^i .* (1-u).^(n-i)
+    return binomialcoeff(n, i) .* u.^i .* (1 .- u).^(n-i)
 end
 
 """

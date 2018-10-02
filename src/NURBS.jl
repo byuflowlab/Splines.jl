@@ -24,7 +24,7 @@ function curvepoint(n, p, U, Pw, u)
     span = getspanindex(n, p, u, U)
     # println("span = ", span)
     N = basisfunctions(span+1, u, p, U)
-    Cw = 0.0
+    Cw = zeros(length(Pw[1,:]))
     for j = 0:p
         # println("N[$j] = ", N[j+1])
         # println("Pw[$(span-p+j)] = ", Pw[span-p+j+1, :])
@@ -33,7 +33,7 @@ function curvepoint(n, p, U, Pw, u)
         # println("j = ", j)
         # println("j+1 = ", j+1)
         # println("span-p+j+1 = ", span-p+j+1)
-        Cw += N[j+1]*Pw[span-p+j+1, :]
+        Cw .+= N[j+1]*Pw[span-p+j+1, :]
     end
     # println(Cw)
     return Cw/Cw[end]
@@ -447,7 +447,7 @@ function degreeelevatecurve(n,p,U,Pw,t)
         #degree elevate bezier
         for i=lbz:ph
             #only points lbz,...,ph are used below
-            ebpts[i+1,:] = 0.0 #ebpts are the (p+t)th-degree bezier control points of the current segment.
+            ebpts[i+1,:] .= 0.0 #ebpts are the (p+t)th-degree bezier control points of the current segment.
             for j = Int(max(0,i-t)):Int(min(p,i))
                 ebpts[i+1,:] += bezalfs[i+1,j+1]*bpts[j+1,:]
             end

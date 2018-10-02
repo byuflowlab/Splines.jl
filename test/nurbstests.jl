@@ -1,3 +1,4 @@
+import LinearAlgebra
 @testset "NURBS: Curve Point Test" begin
     U = [0,0,0,1,2,3,3,3]
     w = [1,4,1,1,1]
@@ -173,7 +174,7 @@ end
     for i = 1:length(curvepoints)
     Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
     end
-    @test isapprox(norm(Cw1-Cw2),0.0,atol=1e-14)
+    @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
 end
 
 
@@ -213,5 +214,5 @@ end
     Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
     end
 
-    @test isapprox(norm(Cw1-Cw2),0.0,atol=1e-14)
+    @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
 end
