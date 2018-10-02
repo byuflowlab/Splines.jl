@@ -173,7 +173,7 @@ end
     for i = 1:length(curvepoints)
     Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
     end
-    @test isapprox(norm(Cw1-Cw2),0.0,atol=1e-10)
+    @test isapprox(norm(Cw1-Cw2),0.0,atol=1e-14)
 end
 
 
@@ -213,5 +213,5 @@ end
     Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
     end
 
-    @test isapprox(norm(Cw1-Cw2),0.0,atol=1e-10)
+    @test isapprox(norm(Cw1-Cw2),0.0,atol=1e-14)
 end
