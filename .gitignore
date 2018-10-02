@@ -1,6 +1,7 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
+scratch*
 docs/build/
 docs/site/
-docs/
+
