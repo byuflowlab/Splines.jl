@@ -21,6 +21,9 @@ Inputs:
 TODO: if u value outside of U vector range is given, function hangs, but doesn't throw error. Need to add a check/error.
 """
 function curvepoint(n, p, U, Pw, u)
+    if u>U[end] || u<U[1]
+        error("Nurbs.curvepoint: parametric point, u, is outside of knot range, U.")
+    end
     span = getspanindex(n, p, u, U)
     # println("span = ", span)
     N = basisfunctions(span+1, u, p, U)
