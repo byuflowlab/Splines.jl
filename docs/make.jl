@@ -23,5 +23,4 @@ deploydocs(
     repo   = "github.com/juddmehr/Splines.jl.git",
     branch = "gh-pages",
     devbranch = "master",
-    osname = "osx"
 )
