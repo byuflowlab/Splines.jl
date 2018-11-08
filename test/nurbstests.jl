@@ -6,7 +6,7 @@ import LinearAlgebra
     n = length(P[:,1])-1
     u = 1
     p = 2
-    i = 5
+    i = 4
     Pw = hcat(w.*P,w)
     # println(Pw)
     C = Splines.curvepoint(n, p, U, Pw, u)
@@ -216,3 +216,15 @@ end
 
     @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
 end
+
+
+@testset "NURBS: Basis Function Tests" begin
+    U = [0,0,0,1,2,3,4,4,5,5,5]
+    w = [1,1,1,1,1,1,1]
+    u = 5/2
+    p = 2
+    n = 1
+    R, dR = Splines.nurbsbasis(u,p,n,U,w)
+    @test [1/8,6/8,1/8] == R
+    @test [-1/2, 0, 1/2] == dR
+end #Basis Functions Tests
