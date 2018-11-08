@@ -94,7 +94,7 @@ function basisfunctionsderivatives(i, u, p, n, U)
     # n = length(U)-p-1
     ndu = ones(p+1, p+1)
     a = zeros(p+1, p+2)
-    ders = zeros(p+1, p+1)
+    ders = zeros(n+1, p+1)
     left = zeros(p+1)
     right = zeros(p+1)
 
@@ -127,7 +127,7 @@ function basisfunctionsderivatives(i, u, p, n, U)
         s1 = 0
         s2 = 1
         a[0+1, 0+1] = 1.0
-        for k=1:p
+        for k=1:n
             # println("Computing Derivative ", k)
             # println("Coefficient Array Row Indices: s1 = ", s1, "\ts2 = ", s2)
             d = 0.0
@@ -196,7 +196,8 @@ function basisfunctionsderivatives(i, u, p, n, U)
         # println("\n")
     end #for r
     #Multiply through by the correct factors
-    for k=1:p
+
+    for k=1:n
         for j=0:p
             ders[k+1, j+1] *= factorial(p)/factorial(p-k)
         end
