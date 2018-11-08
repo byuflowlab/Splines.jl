@@ -1,12 +1,28 @@
 using Documenter, Splines
 
-makedocs()
+makedocs(
+    root    = ".",
+    source  = "./src",
+    build   = "./build",
+    authors = "Judd Mehr",
+    sitename = "Splines.jl",
+)
+
+# deploydocs(
+#     deps   = Deps.pip("mkdocs", "python-markdown-math"),
+#     repo   = "github.com/juddmehr/Splines.jl.git",
+#     branch = "gh-pages",
+#     latest = "master",
+#     julia  = "0.7",
+#     osname = "osx"
+#     )
 
 deploydocs(
-    deps   = Deps.pip("mkdocs", "python-markdown-math"),
+    root   = ".",
+    target = "./build",
     repo   = "github.com/juddmehr/Splines.jl.git",
     branch = "gh-pages",
-    latest = "master",
+    devbranch = "master",
     julia  = "0.7",
     osname = "osx"
-    )
+)
