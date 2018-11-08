@@ -7,7 +7,7 @@ Compute point on rational B-Spline curve defined as:
 \\mathbf{C}^w(u) = \\sum_{i=0}^n N_{i, p}(u) \\mathbf{P}_i^w
 ```
 
-where \$ \\mathbf{P}_i^w \$ are the set of weighted control points and weights such that \$ \\mathbf{P}_i^w = (w_ix_i, w_iy_i, w_iz_i, w_i) \$.
+where ``\\mathbf{P}_i^w ``are the set of weighted control points and weights such that ``\\mathbf{P}_i^w = (w_ix_i, w_iy_i, w_iz_i, w_i)``.
 
 (see NURBS, eqn 4.5 and A4.1)
 
@@ -45,13 +45,13 @@ end
 """
     rationalcurvederivatives(Aders, wders, d)
 
-Compute the point \$ \\mathbf{C}(u) \$ and the derivatives \$ \\mathbf{C}^{(k)}(u) \$  for \$ 1 \\leq k \\leq d \$ where:
+Compute the point ``\\mathbf{C}(u) ``and the derivatives ``\\mathbf{C}^{(k)}(u) `` for ``1 \\leq k \\leq d ``where:
 
 ```math
 \\mathbf{C}^{(k)}(u) = \\frac{ \\mathbf{A}^{(k)}(u) - \\sum_{i=1}^k \\binom{k}{i} w^{(i)}(u) \\mathbf{C}^{(k-1)}(u) }{w(u)}
 ```
 
-where \$ \\mathbf{A}^{(k)}(u) \$ and \$ w^{(i)}(u) \$ are precomputed using preweighted control points for some parametric point, \$ 0 \\leq u \\leq 1 \$, from ```curvederivatives1``` and are inputs Aders and wders, respectively.
+where ``\\mathbf{A}^{(k)}(u) ``and ``w^{(i)}(u) ``are precomputed using preweighted control points for some parametric point, ``0 \\leq u \\leq 1``, from ```curvederivatives1``` and are inputs Aders and wders, respectively.
 
 (see NURBS eqn 4.8 and A4.2)
 """
@@ -59,12 +59,12 @@ function rationalcurvederivatives(Aders, wders, d)
     CK = zeros(d+1, length(Aders[1, :]))
     for k=0:d
         v = Aders[k+1, :]
-        # println("Aders[$k] = ", Aders[k+1, :])
+        # println("Aders[``k] = ", Aders[k+1, :])
         for i=1:k
             if k >= i
                 # println("binom = ",  binomialcoeff(k, i))
-                # println("wders[$i] = ", wders[i+1])
-                # println("Ck[$(k-i)] = ", CK[k-i+1, :])
+                # println("wders[``i] = ", wders[i+1])
+                # println("Ck[``(k-i)] = ", CK[k-i+1, :])
                 v -= binomialcoeff(k, i)*wders[i+1]*CK[k-i+1, :]
             end
         end
@@ -103,7 +103,7 @@ Inputs:
 - u : the parametric point of interest
 - k : the span index at which the knot is to be inserted.
 - s : numer of instances of the new knot alrady present in the knot vector, UP
-- r : number of times the new knot is inserted (it is assumed that \$ r+s \\leq p \$)
+- r : number of times the new knot is inserted (it is assumed that ``r+s \\leq p``)
 
 Outputs:
 - nq : the number of control points minus 1 (the index of the last control point) after insertion
@@ -116,26 +116,26 @@ function curveknotinsertion(np, p, UP, Pw, u, k, s, r)
 
     #initialize output vectors
     UQ = zeros(length(UP)+r)
-    # println("UP, $UP")
-    # println("UQ, $UQ")
+    # println("UP,``UP")
+    # println("UQ,``UQ")
     Qw = zeros(nq+1, length(Pw[1, :]))
     Rw = zeros(p+1, length(Pw[1, :]))
     #Load new knot vector
     for i=0:k
         UQ[i+1] = UP[i+1]
-        # println("UQ$i = ", UQ[i+1])
+        # println("UQ``i = ", UQ[i+1])
     end
-    # println("UQ, $UQ")
+    # println("UQ,``UQ")
     for i=1:r
         UQ[k+i+1] = u
-        # println("UQ$(k+i) = ", UQ[k+i+1])
+        # println("UQ``(k+i) = ", UQ[k+i+1])
     end
-    # println("UQ, $UQ")
+    # println("UQ,``UQ")
     for i=k+1:mp
         UQ[i+1+r] = UP[i+1]
-        # println("UQ$(i+r) = ", UQ[i+1+r])
+        # println("UQ``(i+r) = ", UQ[i+1+r])
     end
-    # println("UQ, $UQ")
+    # println("UQ,``UQ")
     #Save unaltered control points
     for i=0:k-p
         Qw[i+1, :] = Pw[i+1, :]
@@ -155,9 +155,9 @@ function curveknotinsertion(np, p, UP, Pw, u, k, s, r)
             Rw[i+1, :] = alpha*Rw[i+1+1, :] + (1.0-alpha)*Rw[i+1, :]
         end
         Qw[L+1, :] = Rw[0+1, :]
-        # println("Qw $L = ", Qw[L+1, :])
+        # println("Qw``L = ", Qw[L+1, :])
         Qw[k+r-j-s+1, :] = Rw[p-j-s+1, :]
-        # println("Qw $(k+r-j-s) = ", Qw[k+r-j-s+1, :])
+        # println("Qw``(k+r-j-s) = ", Qw[k+r-j-s+1, :])
     end
     #Load remaining control points
     for i=L+1:k-s
@@ -205,11 +205,11 @@ function refineknotvectorcurve(n, p, U, Pw, X, r)
     end
     for j=0:a
         Ubar[j+1] = U[j+1]
-        # println("Ubar[$j] = ", U[j+1])
+        # println("Ubar[``j] = ", U[j+1])
     end
     for j=b+p:m
         Ubar[j+r+1+1] = U[j+1]
-        # println("Ubar[$(j+r+1)] = ", U[j+1])
+        # println("Ubar[``(j+r+1)] = ", U[j+1])
     end
     i = b+p-1
     k = b+p+r
@@ -219,7 +219,7 @@ function refineknotvectorcurve(n, p, U, Pw, X, r)
             while X[j+1]<=U[i+1] && i>a
                 Qw[k-p-1+1,:] = Pw[i-p-1+1,:]
                 Ubar[k+1] = U[i+1]
-                # println("Ubar[$k] = ", U[i+1])
+                # println("Ubar[``k] = ", U[i+1])
                 k -=1
                 i -=1
             end
@@ -236,7 +236,7 @@ function refineknotvectorcurve(n, p, U, Pw, X, r)
                 end
             end
             Ubar[k+1] = X[j+1]
-            # println("Ubar[$k] = ", X[j+1])
+            # println("Ubar[``k] = ", X[j+1])
             k -= 1
         end
     # end
@@ -326,14 +326,14 @@ end
 """
     degreeelevatecurve(n,p,U,Pw,t)
 
-Raise degree of spline from p to p\$+t\$, \$ t \\geq 1 \$ by computing the new control point vector and knot vector.
+Raise degree of spline from p to p``+t``, ``t \\geq 1 ``by computing the new control point vector and knot vector.
 
 Knots are inserted to divide the spline into equivalent Bezier Curves.  These curves are then degree elevated using the following equation.
 
 ```math
 \\mathbf{P}^t_i = \\sum^{\\textrm{min}(p,i)}_{j=\\textrm{max}(0,i-t)} \\frac{\\binom{p}{j} \\binom{t}{i-j} \\mathbf{P}_j}{\\binom{p+t}{i}}~,~~~~~i=0,...,p+t
 ```
-where \$ \\mathbf{P}^t_i \$ are the degree elevated control points after \$t\$-degree elevations
+where ``\\mathbf{P}^t_i ``are the degree elevated control points after``t``-degree elevations
 
 Finally, the excess knots are removed and the degree elevated spline is returned.
 
@@ -669,7 +669,7 @@ Get rational basis functions and derivatives. see eqn 4.2
 R_{i,p}(u) = \\frac{N_{i,p}(u)w_i}{\\sum_{j=0}^n N_{j,p}(u)w_j}
 ```
 
-where \$ N_{i,p}(u) \$ are B-Spline Basis Functions and \$w_i\$ are weights associated with the NURBS control points.
+where ``N_{i,p}(u )`` are B-Spline Basis Functions and ``w_i`` are weights associated with the NURBS control points.
 
 Inputs:
 
