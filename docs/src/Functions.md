@@ -11,7 +11,7 @@ let n = 6 and i = 2. We calculate n choose i (which in this case is 15) by calli
 
 **Example**
 ```@example
-using Splines # hide
+import Splines # hide
 n = 6
 i = 2
 nchoosei = Splines.binomialcoeff(n, i)
@@ -27,7 +27,7 @@ Splines.bernsteincoeff
 
 *example 1: single u value*
 ```@example
-using Splines # hide
+import Splines # hide
 u = 0.5
 n = 6
 i = 2
@@ -35,7 +35,7 @@ b = Splines.bernsteincoeff(u, n, i)
 ```
 *example 2: u as an array*
 ```@example
-using Splines #hide
+import Splines #hide
 u = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 n = 6
 i = 2
@@ -49,17 +49,18 @@ Splines.simple_bezier1D
 ```
 
 ```@setup simplebez
-using Splines
+import Splines
 using Plots
-pyplot()
+
 
 P = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition
 u = collect(0:0.05:1.0) #parametric points
 
 bezierCurve = Splines.simple_bezier1D(P, u)
 
-plot(bezierCurve[:, 1], bezierCurve[:, 2], aspectratio=:equal, grid=:off, label="Bezier")
-plot!(P[:, 1], P[:, 2], marker=:square, label="Control Points")
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24, linewidths = 5)
+plot!(bezierCurve[:, 1], bezierCurve[:, 2], linewidths=10, aspectratio=:equal, grid=:off, label="Bezier")
+plot!(P[:, 1], P[:, 2], markersizes=10, markershapes=:rect, linewidths=10, label="Control Points")
 savefig("simplebezier.svg")
 ```
 **Example**
@@ -83,7 +84,7 @@ Splines.getspanindex(n, p, u, U)
 ```
 
 ```@setup findspan
-using Splines
+import Splines
 U = [0,0,0,1,2,3,4,4,5,5,5]
 p = 2
 n = length(U)-p-1
@@ -116,12 +117,11 @@ Splines.basisfunctions(i, u, p, U)
 
 **Example**
 ```@example
-using Splines # hide
+import Splines # hide
 U = [0,0,0,1,2,3,4,4,5,5,5]
 u = 5/2
 p = 2
 i = 5
-n = length(U)-p-1
 bases = Splines.basisfunctions(i,u,p,U)
 ```
 
@@ -132,12 +132,12 @@ Splines.basisfunctionsderivatives(i, u, p, n, U)
 
 **Example**
 ```@example
-using Splines # hide
+import Splines # hide
 U = [0,0,0,1,2,3,4,4,5,5,5]
 u = 5/2
 p = 2
 i = 5
-n = length(U)-p-1
+n = p
 derivatives = Splines.basisfunctionsderivatives(i,u,p,n,U)
 ```
 
@@ -147,7 +147,7 @@ Splines.curvederivatives1(n, p, U, P, u, d)
 
 **Example**
 ```@example
-using Splines # hide
+import Splines # hide
 U = [0,0,0,1,2,3,4,4,5,5,5]
 u = 5/2
 p = 2
@@ -163,7 +163,7 @@ Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
 
 **Example**
 ```@example
-using Splines # hide
+import Splines # hide
 U = [0,0,0,0,2/5,3/5,3/5,1,1,1,1]
 u = 1/2
 i = 4
@@ -184,13 +184,27 @@ cprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
 ## NURBS Functions
 
 ```@docs
+Splines.nurbsbasis
+```
+*Example*
+```@example
+import Splines #hide
+U = [0,0,0,1,2,3,4,4,5,5,5] #knot vector
+w = [1,1,1,1,1,1,1] #control point weights
+u = 5/2 #parametric point of interest
+p = 2 #curve degree
+n = 1 #number of derivatives
+R, dR = Splines.nurbsbasis(u,p,n,U,w) #rational bases and first derivatives
+```
+
+```@docs
 Splines.curvepoint
 ```
 **Examples**
 
 *example 1: single point*
 ```@example
-using Splines # hide
+import Splines # hide
 U = [0, 0, 0, 1, 1, 1] #knot vector
 u = 0 #parametric point of interest
 p = 2 #curve order
@@ -202,7 +216,7 @@ Cw = Splines.curvepoint(n, p, U, Pw, u)
 ```
 
 ```@setup nurbs_circle
-using Splines
+import Splines
 U = [0, 0, 0, 1, 1, 1] #knot vector
 u = collect(0:0.05:1.0) #parametric points
 p = 2 #curve order
@@ -217,9 +231,10 @@ end
 
 
 using Plots
-pyplot()
-plot(Cw[:, 1], Cw[:, 2], aspectratio=:equal, grid=:off, label="NURBS")
-plot!(P[:, 1], P[:, 2], marker=:square, label="Control Points")
+
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(Cw[:, 1], Cw[:, 2], linewidths=10, aspectratio=:equal, grid=:off, label="NURBS")
+plot!(P[:, 1], P[:, 2], markersizes=10, markershapes=:square, linewidths=10, label="Control Points")
 savefig("nurbscircle.svg")
 ```
 
@@ -248,7 +263,7 @@ Splines.rationalcurvederivatives
 **Example**
 
 ```@example
-using Splines # hide
+import Splines # hide
 U = [0, 0, 0, 1, 1, 1] #knot vector
 u = 0 #parametric point of interest
 p = 2 #curve order
@@ -276,9 +291,9 @@ Splines.curveknotinsertion
 
 *example 1: Unique Knot Insertion*
 ```@setup unique_knot_insertion
-using Splines
+import Splines
 using Plots
-pyplot()
+
 
 UP = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
 u = 5/2
@@ -305,11 +320,12 @@ for i = 1:length(curvepoints)
   Cw2[i, :] = Splines.curvepoint(nq, p, UQ, Qw, curvepoints[i])
 end
 
-plot(aspectratio=:equal, grid=:off)
-plot!(Cw1[:, 1], Cw1[:, 2], linewidth=2, label="Original Spline")
-plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidth=3, label="New Spline")
-plot!(Pw[:, 1], Pw[:, 2], marker=:square, label="Original CP's")
-plot!(Qw[4:6, 1], Qw[4:6, 2], marker=:circle, linestyle=:dash, label="New Control Points")
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label="Original Spline")
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label="New Spline")
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label="Original CP's")
+plot!(Qw[4:6, 1], Qw[4:6, 2], markersizes=10, markershapes=:circle, linestyle=:dash, linewidths=7, label="New Control Points")
 savefig("uniqueknotinsert.svg")
 ```
 
@@ -332,9 +348,9 @@ nq, UQ, Qw = Splines.curveknotinsertion(np, p, UP, Pw, u, k, s, r)
 
 *example 2: Repeated Knot Insertion*
 ```@setup unique_knot_insertion
-using Splines
+import Splines
 using Plots
-pyplot()
+
 
 UP = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
 u = 2
@@ -361,11 +377,12 @@ for i = 1:length(curvepoints)
   Cw2[i, :] = Splines.curvepoint(nq, p, UQ, Qw, curvepoints[i])
 end
 
-plot(aspectratio=:equal, grid=:off)
-plot!(Cw1[:, 1], Cw1[:, 2], linewidth=2, label="Original Spline")
-plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidth=3, label="New Spline")
-plot!(Pw[:, 1], Pw[:, 2], marker=:square, label="Original CP's")
-plot!(Qw[4:6, 1], Qw[4:6, 2], marker=:circle, linestyle=:dash, label="New Control Points")
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label="Original Spline")
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label="New Spline")
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label="Original CP's")
+plot!(Qw[4:6, 1], Qw[4:6, 2], markersizes=10, markershapes=:circle, linestyle=:dash, linewidths=7, label="New Control Points")
 savefig("repeatknotinsert.svg")
 ```
 
@@ -394,9 +411,9 @@ Splines.refineknotvectorcurve
 **Example**
 
 ```@setup multi_knot_insertion
-using Splines
+import Splines
 using Plots
-pyplot()
+
 
 U = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
 X = [1.5, 2.5]
@@ -424,11 +441,12 @@ for i = 1:length(curvepoints)
     Cw2[i, :] = Splines.curvepoint(nq, p, Ubar, Qwcalcd, curvepoints[i])
 end
 
-plot(aspectratio=:equal, grid=:off)
-plot!(Cw1[:, 1], Cw1[:, 2], linewidth=2, label="Original Spline")
-plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidth=3, label="New Spline")
-plot!(Pw[:, 1], Pw[:, 2], marker=:square, label="Original CP's")
-plot!(Qw[2:6, 1], Qw[2:6, 2], marker=:circle, linestyle=:dash, label="New Control Points")
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label="Original Spline")
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label="New Spline")
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label="Original CP's")
+plot!(Qw[2:6, 1], Qw[2:6, 2], markersizes=10, markershapes=:circle, linestyle=:dash, linewidths=7, label="New Control Points")
 savefig("multiknotinsert.svg")
 ```
 
@@ -454,9 +472,9 @@ Splines.degreeelevatecurve
 
 *example 1: Single Degree Elevation*
 ```@setup 1-degree-elevation
-using Splines
+import Splines
 using Plots
-pyplot()
+
 
 U = [0,0,0,0,3/10,7/10,1,1,1,1]
 p = 3
@@ -479,11 +497,12 @@ for i = 1:length(curvepoints)
   Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
 end
 
-plot(aspectratio=:equal, grid=:off)
-plot!(Cw1[:, 1], Cw1[:, 2], linewidth=2, label="Original Spline")
-plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidth=3, label="New Spline")
-plot!(Pw[:, 1], Pw[:, 2], marker=:square, label="Original CP's")
-plot!(Qw[2:end-1, 1], Qw[2:end-1, 2], marker=:circle, linestyle=:dash, label="New Control Points")
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label="Original Spline")
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label="New Spline")
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label="Original CP's")
+plot!(Qw[2:end-1, 1], Qw[2:end-1, 2], markersizes=10, markershapes=:circle, linestyle=:dash,linewidths=7,  label="New Control Points")
 savefig("1degreeelevate.svg")
 ```
 
@@ -503,13 +522,9 @@ nh, Uh, Qw = Splines.degreeelevatecurve(n,p,U,Pw,t)
 
 *example 2: 2 Degree Elevation*
 ```@setup 2-degree-elevation
-using Splines
+import Splines
 using Plots
-pyplot()
 
-using Splines
-using Plots
-pyplot()
 
 U = [0,0,0,0,3/10,7/10,1,1,1,1]
 p = 3
@@ -532,11 +547,12 @@ for i = 1:length(curvepoints)
   Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
 end
 
-plot(aspectratio=:equal, grid=:off)
-plot!(Cw1[:, 1], Cw1[:, 2], linewidth=2, label="Original Spline")
-plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidth=3, label="New Spline")
-plot!(Pw[:, 1], Pw[:, 2], marker=:square, label="Original CP's")
-plot!(Qw[2:end-1, 1], Qw[2:end-1, 2], marker=:circle, linestyle=:dash, label="New Control Points")
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label="Original Spline")
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label="New Spline")
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label="Original CP's")
+plot!(Qw[2:end-1, 1], Qw[2:end-1, 2], markersizes=10, markershapes=:circle, linestyle=:dash,linewidths=7,  label="New Control Points")
 savefig("2degreeelevation.svg")
 ```
 
