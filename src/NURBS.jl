@@ -51,7 +51,7 @@ Compute the point `` \\mathbf{C}(u) `` and the derivatives `` \\mathbf{C}^{(k)}(
 \\mathbf{C}^{(k)}(u) = \\frac{ \\mathbf{A}^{(k)}(u) - \\sum_{i=1}^k \\binom{k}{i} w^{(i)}(u) \\mathbf{C}^{(k-1)}(u) }{w(u)}
 ```
 
-where `` \\mathbf{A}^{(k)}(u) `` and `` w^{(i)}(u) `` are precomputed using preweighted control points for some parametric point, `` 0 \\leq u \\leq 1``, from ` ```curvederivatives1``` and are inputs Aders and wders, respectively.
+where `` \\mathbf{A}^{(k)}(u) `` and `` w^{(i)}(u) `` are precomputed using preweighted control points for some parametric point, `` 0 \\leq u \\leq 1``, from ```curvederivatives1``` and are inputs Aders and wders, respectively.
 
 (see NURBS eqn 4.8 and A4.2)
 """
