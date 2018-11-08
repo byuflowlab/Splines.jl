@@ -20,7 +20,7 @@ makedocs(
 deploydocs(
     root   = ".",
     target = "./build",
-    repo   = "github.com/juddmehr/Splines.jl.git",
+    repo   = "github.com/byuflowlab/Splines.jl",
     branch = "gh-pages",
     devbranch = "master",
 )

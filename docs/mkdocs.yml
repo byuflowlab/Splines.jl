@@ -1,5 +1,5 @@
 site_name:        Splines.jl
-repo_url:         https://github.com/juddmehr/Splines.jl
+repo_url:         github.com/byuflowlab/Splines.jl
 site_description: Splines Package
 site_author:      juddmehr
 
