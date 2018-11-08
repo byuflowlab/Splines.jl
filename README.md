@@ -7,5 +7,4 @@ The algorithms outlined in the text are for C/C++ code. The C language, and the 
 Note that this package is still in early, active development for research purposes, so only tools required for that research have been implemented at this time.
 
 
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://byuflowlab.github.io/Splines.jl/stable)
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://byuflowlab.github.io/Splines.jl/latest)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](http://flow.byu.edu/Splines.jl/)
