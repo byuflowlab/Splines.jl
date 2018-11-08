@@ -25,10 +25,10 @@ end #Find Span Tests
     u = 5/2
     p = 2
     i = 5
-    n = length(U)-p-1
+    n = p
     bases1 = Splines.basisfunctions(i,u,p,U)
-    @test [1/8,6/8,1/8] == bases1
     # println("bases: ", bases1)
+    @test [1/8,6/8,1/8] == bases1
     derivatives = Splines.basisfunctionsderivatives(i,u,p,n,U)
     # println("derivatives: ")
     # display(derivatives)
