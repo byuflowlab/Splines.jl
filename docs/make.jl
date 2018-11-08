@@ -23,6 +23,5 @@ deploydocs(
     repo   = "github.com/juddmehr/Splines.jl.git",
     branch = "gh-pages",
     devbranch = "master",
-    julia  = "0.7",
     osname = "osx"
 )
