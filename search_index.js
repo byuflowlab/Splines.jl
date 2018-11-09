@@ -61,7 +61,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Splines.bernsteincoeff",
     "category": "function",
-    "text": "bernsteincoeff(u, n, i)\n\nCalculate Bernstein Coefficient (Bezier Basis Function) defined as:\n\nB_i n(u) = binomni u^i (1-u)^n-1\n\nat parametric point, u, where 0leq uleq1. u may either be a single value or an array.\n\n(see NURBS, eqn 1.8)\n\n\n\n\n\n"
+    "text": "bernsteincoeff(u, n, i)\n\nCalculate Bernstein Coefficient (Bezier Basis Function) defined as:\n\nB_i n(u) = binomni u^i (1-u)^n-1\n\nat parametric point, u, where 0leq uleq1.  u may either be a single value or an array.\n\n(see NURBS, eqn 1.8)\n\n\n\n\n\n"
 },
 
 {
@@ -69,7 +69,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Splines.simple_bezier1D",
     "category": "function",
-    "text": "simple_bezier1D(P, u)\n\nCalculate a point along a Bezier curve at the parametric point, u, based on the control points mathbfP where the Bezier curve, mathbfC(u) is defined as:\n\nmathbfC(u) = sum_i=0^n B_i n(u) mathbfP_i  0 leq u leq 1\n\nwhere B is the basis (Bernstein Coefficient) at parametric point, u, as calculated frombernsteincoeff, and n is the number of control points in vector mathbfP. Again, u may either be a single value or an array.\n\n(see NURBS eqn 1.7)\n\n\n\n\n\n"
+    "text": "simple_bezier1D(P, u)\n\nCalculate a point along a Bezier curve at the parametric point, u, based on the control points, mathbfP, where the Bezier curve, mathbfC(u), is defined as:\n\nmathbfC(u) = sum_i=0^n B_i n(u) mathbfP_i  0 leq u leq 1\n\nwhere B is the basis (Bernstein Coefficient) at parametric point, u, as calculated from bernsteincoeff, and n is the number of control points in vector mathbfP.  Again, u may either be a single value or an array.\n\n(see NURBS eqn 1.7)\n\n\n\n\n\n"
 },
 
 {
@@ -77,7 +77,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Bezier Functions",
     "category": "section",
-    "text": "Splines.binomialcoefflet n = 6 and i = 2. We calculate n choose i (which in this case is 15) by calling the binomialcoeff function:Exampleimport Splines # hide\nn = 6\ni = 2\nnchoosei = Splines.binomialcoeff(n, i)Splines.bernsteincoeffExamplesexample 1: single u valueimport Splines # hide\nu = 0.5\nn = 6\ni = 2\nb = Splines.bernsteincoeff(u, n, i)example 2: u as an arrayimport Splines #hide\nu = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]\nn = 6\ni = 2\nb = Splines.bernsteincoeff(u, n, i)Splines.simple_bezier1Dimport Splines\nusing Plots\n\n\nP = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition\nu = collect(0:0.05:1.0) #parametric points\n\nbezierCurve = Splines.simple_bezier1D(P, u)\n\nplot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24, linewidths = 5)\nplot!(bezierCurve[:, 1], bezierCurve[:, 2], linewidths=10, aspectratio=:equal, grid=:off, label=\"Bezier\")\nplot!(P[:, 1], P[:, 2], markersizes=10, markershapes=:rect, linewidths=10, label=\"Control Points\")\nsavefig(\"simplebezier.svg\")ExampleP = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition\nu = collect(0:0.05:1.0) #parametric points\n\nbezierCurve = Splines.simple_bezier1D(P, u)(Image: )"
+    "text": "Splines.binomialcoeffExampleimport Splines # hide\nn = 6\ni = 2\nnchoosei = Splines.binomialcoeff(n, i)Splines.bernsteincoeffExamplesexample 1: single u valueimport Splines # hide\nu = 0.5\nn = 6\ni = 2\nb = Splines.bernsteincoeff(u, n, i)example 2: u as an arrayimport Splines #hide\nu = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]\nn = 6\ni = 2\nb = Splines.bernsteincoeff(u, n, i)Splines.simple_bezier1Dimport Splines\nusing Plots\n\n\nP = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition\nu = collect(0:0.05:1.0) #parametric points\n\nbezierCurve = Splines.simple_bezier1D(P, u)\n\nplot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24, linewidths = 5)\nplot!(bezierCurve[:, 1], bezierCurve[:, 2], linewidths=10, aspectratio=:equal, grid=:off, label=\"Bezier\")\nplot!(P[:, 1], P[:, 2], markersizes=10, markershapes=:rect, linewidths=10, label=\"Control Points\")\nsavefig(\"simplebezier.svg\")ExampleP = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition\nu = collect(0:0.05:1.0) #parametric points\n\nbezierCurve = Splines.simple_bezier1D(P, u)(Image: )"
 },
 
 {
@@ -85,7 +85,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Splines.getspanindex",
     "category": "method",
-    "text": "getspanindex(n, p, u, U)\n\nComplete binary search to find span index of vector, U, in which knot, u, lies. (NURBS A2.1)\n\n\n\n\n\n"
+    "text": "getspanindex(n, p, u, U)\n\nComplete binary search to find span index of vector, U, in which the parametric point, u, lies. (NURBS A2.1)\n\n\n\n\n\n"
 },
 
 {
@@ -93,7 +93,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Splines.basisfunctions",
     "category": "method",
-    "text": "basisFunctions(i, u, p, U)\n\nCalculate the non-vanishing basis functions of the B-Spline of order p, defined by knots U at knot u.\n\nThe formula for the basis functions is:\n\nN_i0(u) =\nbegincases\n      1  textrmif  u_i leq u leq u_i+1 \n      0  textrmotherwise\nendcases\n\nN_ip(u) = fracu-u_iu_i+p - u_i N_ip-1(u) - fracu_i+p+1 - uu_i+p+1 - u_i+1 N_i+1p-1(u)\n\nNote that the algorithm used in basisFunctions removes redunant calculation and potential division by zero (see NURBS, eqn 2.5 and A2.2).\n\n\n\n\n\n"
+    "text": "basisFunctions(i, u, p, U)\n\nCalculate the non-vanishing basis functions of the B-Spline of order p, defined by knots U at parametric point, u.\n\nThe formula for the basis functions is:\n\nN_i0(u) =\nbegincases\n      1  textrmif  u_i leq u leq u_i+1 \n      0  textrmotherwise\nendcases\n\nN_ip(u) = fracu-u_iu_i+p - u_i N_ip-1(u) - fracu_i+p+1 - uu_i+p+1 - u_i+1 N_i+1p-1(u)\n\nNote that the algorithm used in basisFunctions removes redunant calculation and potential division by zero (see NURBS, eqn 2.5 and A2.2).\n\n\n\n\n\n"
 },
 
 {
@@ -101,7 +101,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Splines.basisfunctionsderivatives",
     "category": "method",
-    "text": "basisfunctionsderivatives(i, u, p, n, U)\n\nCalculate the non-vanishing basis functions and derivatives of the B-Spline of order p, defined by knots U at parametric location u.\n\nThe basis function derivative is given by\n\nN_ip^ = fracpu_i+p - u_i N_ip-1(u) - fracpu_i+p+1 - u_i+1 N_i+1p-1(u)\n\n(see NURBS, eqn 2.7 and A2.3)\n\nInputs:\n\ni : knot span containing u\nu : parametric point of interest\np : the curve order\nn : the max derivative order (n ≦ p)\nU : the knot vector\n\n\n\n\n\n"
+    "text": "basisfunctionsderivatives(i, u, p, n, U)\n\nCalculate the non-vanishing basis functions and derivatives of the B-Spline of order p, defined by knots U at parametric point,u`.\n\nThe basis function derivative is given by\n\nN_ip^ = fracpu_i+p - u_i N_ip-1(u) - fracpu_i+p+1 - u_i+1 N_i+1p-1(u)\n\n(see NURBS, eqn 2.7 and A2.3)\n\nInputs:\n\ni : knot span containing u\nu : parametric point of interest\np : the curve order\nn : the max derivative order (n ≦ p)\nU : the knot vector\n\n\n\n\n\n"
 },
 
 {
@@ -109,7 +109,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Splines.curvederivatives1",
     "category": "method",
-    "text": "curvederivatives1(n, p, U, P, u, d)\n\nCompute a curve point and its derivatives up do the dth derivative at parametric point u. (NURBS, A3.2)\n\nInputs\n\nn : the number of control points is n+1\np : the degree of the curve\nU : the knot vector\nP : the control points\nu : the parametric point of interest\nd : derivative order (0 ≤ k ≦ d)\n\n\n\n\n\n"
+    "text": "curvederivatives1(n, p, U, P, u, d)\n\nCompute a curve point and its derivatives up do the dth derivative at parametric point, u. (NURBS, A3.2)\n\nInputs\n\nn : the number of control points is n+1\np : the degree of the curve\nU : the knot vector\nP : the control points\nu : the parametric point of interest\nd : derivative order (0 ≤ k ≦ d)\n\n\n\n\n\n"
 },
 
 {
@@ -133,7 +133,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Splines.nurbsbasis",
     "category": "function",
-    "text": "nurbsbasis(i,p,u,U,w)\n\nGet rational basis functions and derivatives. see eqn 4.2\n\nR_ip(u) = fracN_ip(u)w_isum_j=0^n N_jp(u)w_j\n\nwhere N_ip(u ) are B-Spline Basis Functions and w_i are weights associated with the NURBS control points.\n\nInputs:\n\nu : parametric point of interest\np : the curve order\nn : the max derivative order (n ≦ p)\nU : the knot vector\nweights : control point weights\n\n\n\n\n\n"
+    "text": "nurbsbasis(u,p,d,U,w)\n\nGet rational basis functions and derivatives.\n\nR_ip(u) = fracN_ip(u)w_isum_j=0^n N_jp(u)w_j\n\nwhere N_ip(u ) are B-Spline Basis Functions and w_i are weights associated with the NURBS control points.\n\n(see NURBS eqn 4.2)\n\nInputs:\n\nu : parametric point of interest\np : the curve order\nd : the max derivative order (n ≦ p)\nU : the knot vector\nw : control point weights\n\n\n\n\n\n"
 },
 
 {
