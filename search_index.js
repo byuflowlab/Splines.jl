@@ -181,7 +181,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Splines.jl",
     "title": "About",
     "category": "section",
-    "text": "Pages = [\"license.md\"]"
+    "text": "Pages = [\"license.md\"]\nDepth = 1"
 },
 
 {
