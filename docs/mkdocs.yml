@@ -18,9 +18,9 @@ markdown_extensions:
   - fenced_code
   - mdx_math
 
-docs_dir: 'build'
+docs_dir: 'src'
 
 nav:
-  - Home: '../src/index.md'
+  - Home: 'index.md'
   - About:
-    - 'License': '../src/license.md'
+    - 'License': 'license.md'
