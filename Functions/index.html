@@ -1,85 +1,267 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Functions · Splines.jl</title><link href="https://cdnjs.cloudflare.com/ajax/libs/normalize/4.2.0/normalize.min.css" rel="stylesheet" type="text/css"/><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/default.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL=".."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.2.0/require.min.js" data-main="../assets/documenter.js"></script><script src="../siteinfo.js"></script><script src="../../versions.js"></script><link href="../assets/documenter.css" rel="stylesheet" type="text/css"/></head><body><nav class="toc"><h1>Splines.jl</h1><select id="version-selector" onChange="window.location.href=this.value" style="visibility: hidden"></select><form class="search" id="search-form" action="../search/"><input id="search-query" name="q" type="text" placeholder="Search docs"/></form><ul><li class="current"><a class="toctext" href>Functions</a><ul class="internal"><li><a class="toctext" href="#Bezier-Functions-1">Bezier Functions</a></li><li><a class="toctext" href="#B-Spline-Functions-1">B-Spline Functions</a></li><li><a class="toctext" href="#NURBS-Functions-1">NURBS Functions</a></li></ul></li><li><a class="toctext" href="../">Splines.jl</a></li><li><a class="toctext" href="../license/">License</a></li></ul></nav><article id="docs"><header><nav><ul><li><a href>Functions</a></li></ul><a class="edit-page" href="https://github.com/byuflowlab/Splines.jl/blob/master/docs/src/Functions.md"><span class="fa"></span> Edit on GitHub</a></nav><hr/><div id="topbar"><span>Functions</span><a class="fa fa-bars" href="#"></a></div></header><h1><a class="nav-anchor" id="Functions-1" href="#Functions-1">Functions</a></h1><h2><a class="nav-anchor" id="Bezier-Functions-1" href="#Bezier-Functions-1">Bezier Functions</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.binomialcoeff" href="#Splines.binomialcoeff"><code>Splines.binomialcoeff</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">binomialcoeff(n, i)</code></pre><p>Calculate the Binomial Coefficient defined as:</p><div>\[\binom{n}{i} = \frac{n!}{i!(n-1)!}\]</div></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/Bezier.jl#L1-L9">source</a></section><p>let n = 6 and i = 2. We calculate n choose i (which in this case is 15) by calling the <code>binomialcoeff</code> function:</p><p><strong>Example</strong></p><div><pre><code class="language-julia">n = 6
-i = 2
-nchoosei = Splines.binomialcoeff(n, i)</code></pre><pre><code class="language-none">15.0</code></pre></div><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.bernsteincoeff" href="#Splines.bernsteincoeff"><code>Splines.bernsteincoeff</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">bernsteincoeff(u, n, i)</code></pre><p>Calculate Bernstein Coefficient (Bezier Basis Function) defined as:</p><div>\[B_{i, n}(u) = \binom{n}{i} u^i (1-u)^{n-1}\]</div><p>at parametric point, <span>$u$</span>, where <span>$0\leq u\leq1$</span>. <span>$u$</span> may either be a single value or an array.</p><p>(see NURBS, eqn 1.8)</p></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/Bezier.jl#L14-L26">source</a></section><p><strong>Examples</strong></p><p><em>example 1: single u value</em></p><div><pre><code class="language-julia">u = 0.5
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Splines Package"> 
+    <meta name="author" content="juddmehr"> 
+    <link rel="shortcut icon" href="../img/favicon.ico">
+
+    <title>Functions - Splines.jl</title>
+
+    <link href="../css/bootstrap-custom.min.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdn.jsdelivr.net/font-hack/2.018/css/hack.min.css">
+    <link href='//fonts.googleapis.com/css?family=PT+Sans:400,400italic,700,700italic&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    <link href='//fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,700italic,400,300,600,700&subset=latin-ext,latin' rel='stylesheet' type='text/css'>
+    <link href="../css/base.css" rel="stylesheet">
+    <link href="../css/cinder.css" rel="stylesheet">
+    <link rel="stylesheet" href="../css/highlight.css">
+
+
+    <link href="../assets/Documenter.css" rel="stylesheet">
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+            <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+            <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+        <![endif]-->
+
+    <script src="https://ajax.googleapis.com/ajax/libs/webfont/1.5.18/webfont.js"></script>
+    <script>
+    WebFont.load({
+        google: {
+            families: ['Open Sans', 'PT Sans']
+        }
+    });
+    </script>
+
+    
+</head>
+
+<body>
+
+    <div class="navbar navbar-default navbar-fixed-top" role="navigation">
+    <div class="container">
+
+        <!-- Collapsed navigation -->
+        <div class="navbar-header">
+            <!-- Expander button -->
+            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+            
+
+            <!-- Main title -->
+
+            <a class="navbar-brand" href="..">Splines.jl</a>
+        </div>
+
+        <!-- Expanded navigation -->
+        <div class="navbar-collapse collapse">
+                <!-- Main navigation -->
+                <ul class="nav navbar-nav">
+                
+                
+                    <li >
+                        <a href="..">Home</a>
+                    </li>
+                
+                
+                
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">About <b class="caret"></b></a>
+                        <ul class="dropdown-menu">
+                        
+                            
+<li >
+    <a href="../license/">License</a>
+</li>
+
+                        
+                        </ul>
+                    </li>
+                
+                
+                </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                    <li>
+                        <a href="#" data-toggle="modal" data-target="#mkdocs_search_modal">
+                            <i class="fa fa-search"></i> Search
+                        </a>
+                    </li>
+                    <li>
+                        <a href="http://github.com/byuflowlab/Splines.jl/edit/master/docs/Functions.md"><i class="fa fa-github"></i> Edit on GitHub</a>
+                    </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+    <div class="container">
+        
+        <div class="col-md-3"><div class="bs-sidebar hidden-print affix well" role="complementary">
+    <ul class="nav bs-sidenav">
+        <li class="first-level active"><a href="#functions">Functions</a></li>
+            <li class="second-level"><a href="#bezier-functions">Bezier Functions</a></li>
+                
+            <li class="second-level"><a href="#b-spline-functions">B-Spline Functions</a></li>
+                
+        <li class="first-level "><a href="#calculate-cwu-derivatives">Calculate Cw(u) derivatives</a></li>
+        <li class="first-level "><a href="#separate-derivatives">Separate derivatives</a></li>
+        <li class="first-level "><a href="#calculate-nurbs-derivatives">Calculate NURBS derivatives</a></li>
+    </ul>
+</div></div>
+        <div class="col-md-9" role="main">
+
+<h1 id="functions">Functions</h1>
+<h2 id="bezier-functions">Bezier Functions</h2>
+<p>```@docs
+Splines.binomialcoeff</p>
+<pre><code>
+let n = 6 and i = 2. We calculate n choose i (which in this case is 15) by calling the ```binomialcoeff``` function:
+
+**Example**
+```@example
+import Splines # hide
 n = 6
 i = 2
-b = Splines.bernsteincoeff(u, n, i)</code></pre><pre><code class="language-none">0.234375</code></pre></div><p><em>example 2: u as an array</em></p><div><pre><code class="language-julia">u = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+nchoosei = Splines.binomialcoeff(n, i)
+</code></pre>
+
+<p>```@docs
+Splines.bernsteincoeff</p>
+<pre><code>
+**Examples**
+
+*example 1: single u value*
+```@example
+import Splines # hide
+u = 0.5
 n = 6
 i = 2
-b = Splines.bernsteincoeff(u, n, i)</code></pre><pre><code class="language-none">11-element Array{Float64,1}:
- 0.0
- 0.09841500000000002
- 0.2457600000000001
- 0.3241349999999999
- 0.31104000000000004
- 0.234375
- 0.13824
- 0.059535000000000025
- 0.015359999999999988
- 0.0012149999999999989
- 0.0</code></pre></div><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.simple_bezier1D" href="#Splines.simple_bezier1D"><code>Splines.simple_bezier1D</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">simple_bezier1D(P, u)</code></pre><p>Calculate a point along a Bezier curve at the parametric point, <span>$u$</span>, based on the control points <span>$\mathbf{P}$</span> where the Bezier curve, <span>$\mathbf{C}(u)$</span> is defined as:</p><div>\[\mathbf{C}(u) = \sum_{i=0}^n B_{i, n}(u) \mathbf{P}_i~, ~~~~ 0 \leq u \leq 1\]</div><p>where <span>$B$</span> is the basis (Bernstein Coefficient) at parametric point, <span>$u$</span>, as calculated from<code>bernsteincoeff</code>, and n is the number of control points in vector <span>$\mathbf{P}$</span>. Again, <span>$u$</span> may either be a single value or an array.</p><p>(see NURBS eqn 1.7)</p></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/Bezier.jl#L31-L42">source</a></section><div></div><p><strong>Example</strong></p><div><pre><code class="language-julia">P = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition
+b = Splines.bernsteincoeff(u, n, i)
+</code></pre>
+
+<p><em>example 2: u as an array</em>
+```@example
+import Splines #hide
+u = [0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+n = 6
+i = 2
+b = Splines.bernsteincoeff(u, n, i)</p>
+<pre><code>
+
+
+```@docs
+Splines.simple_bezier1D
+</code></pre>
+
+<p>```@setup simplebez
+import Splines
+using Plots</p>
+<p>P = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition
+u = collect(0:0.05:1.0) #parametric points</p>
+<p>bezierCurve = Splines.simple_bezier1D(P, u)</p>
+<p>plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24, linewidths = 5)
+plot!(bezierCurve[:, 1], bezierCurve[:, 2], linewidths=10, aspectratio=:equal, grid=:off, label="Bezier")
+plot!(P[:, 1], P[:, 2], markersizes=10, markershapes=:rect, linewidths=10, label="Control Points")
+savefig("simplebezier.svg")</p>
+<pre><code>**Example**
+```@example simplebez
+P = [0.0 0.0; 0.0 0.1; 0.3 0.25; 1.0 0.0] #control point definition
 u = collect(0:0.05:1.0) #parametric points
 
-bezierCurve = Splines.simple_bezier1D(P, u)</code></pre><pre><code class="language-none">21×2 Array{Float64,2}:
- 0.0         0.0
- 0.00014875  0.0014725
- 0.00118     0.00576
- 0.00394875  0.0126225
- 0.00928     0.02176
- 0.0179687   0.0328125
- 0.03078     0.04536
- 0.0484487   0.0589225
- 0.07168     0.07296
- 0.101149    0.0868725
- ⋮
- 0.23328     0.12096
- 0.293849    0.127172
- 0.36358     0.12936
- 0.442969    0.126562
- 0.53248     0.11776
- 0.632549    0.101873
- 0.74358     0.07776
- 0.865949    0.0442225
- 1.0         0.0</code></pre></div><p><img src="../simplebezier.svg" alt/></p><h2><a class="nav-anchor" id="B-Spline-Functions-1" href="#B-Spline-Functions-1">B-Spline Functions</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.getspanindex-NTuple{4,Any}" href="#Splines.getspanindex-NTuple{4,Any}"><code>Splines.getspanindex</code></a> — <span class="docstring-category">Method</span>.</div><div><div><pre><code class="language-none">getspanindex(n, p, u, U)</code></pre><p>Complete binary search to find span index of vector, U, in which knot, u, lies. (NURBS A2.1)</p></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/BSpline.jl#L1-L5">source</a></section><div></div><p><strong>Example</strong></p><div><pre><code class="language-julia">U = [0,0,0,1,2,3,4,4,5,5,5]
+bezierCurve = Splines.simple_bezier1D(P, u)
+</code></pre>
+
+<p><img alt="" src="simplebezier.svg" /></p>
+<h2 id="b-spline-functions">B-Spline Functions</h2>
+<p>```@docs
+Splines.getspanindex(n, p, u, U)</p>
+<pre><code>
+```@setup findspan
+import Splines
+U = [0,0,0,1,2,3,4,4,5,5,5]
 p = 2
 n = length(U)-p-1
+</code></pre>
 
-u = 5/2
-Splines.getspanindex(n,p,u,U)</code></pre><pre><code class="language-none">4</code></pre></div><div><pre><code class="language-julia">u = 5
-Splines.getspanindex(n,p,u,U)</code></pre><pre><code class="language-none">8</code></pre></div><div><pre><code class="language-julia">u = 0
-Splines.getspanindex(n,p,u,U)</code></pre><pre><code class="language-none">2</code></pre></div><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.basisfunctions-NTuple{4,Any}" href="#Splines.basisfunctions-NTuple{4,Any}"><code>Splines.basisfunctions</code></a> — <span class="docstring-category">Method</span>.</div><div><div><pre><code class="language-none">basisFunctions(i, u, p, U)</code></pre><p>Calculate the non-vanishing basis functions of the B-Spline of order p, defined by knots U at knot u.</p><p>The formula for the basis functions is:</p><div>\[N_{i,0}(u) =
-\begin{cases}
-      1 &amp; \textrm{if } u_i \leq u \leq u_{i+1} \\
-      0 &amp; \textrm{otherwise}
-\end{cases}\]</div><div>\[N_{i,p}(u) = \frac{u-u_i}{u_{i+p} - u_i} N_{i,p-1}(u) - \frac{u_{i+p+1} - u}{u_{i+p+1} - u_{i+1}} N_{i+1,p-1}(u)\]</div><p>Note that the algorithm used in <code>basisFunctions</code> removes redunant calculation and potential division by zero (see NURBS, eqn 2.5 and A2.2).</p></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/BSpline.jl#L29-L49">source</a></section><p><strong>Example</strong></p><div><pre><code class="language-julia">U = [0,0,0,1,2,3,4,4,5,5,5]
+<p><strong>Example</strong>
+```@example findspan
+U = [0,0,0,1,2,3,4,4,5,5,5]
+p = 2
+n = length(U)-p-1</p>
+<p>u = 5/2
+Splines.getspanindex(n,p,u,U)</p>
+<pre><code>
+```@example findspan
+u = 5
+Splines.getspanindex(n,p,u,U)
+</code></pre>
+
+<p>```@example findspan
+u = 0
+Splines.getspanindex(n,p,u,U)</p>
+<pre><code>
+
+```@docs
+Splines.basisfunctions(i, u, p, U)
+</code></pre>
+
+<p><strong>Example</strong>
+```@example
+import Splines # hide
+U = [0,0,0,1,2,3,4,4,5,5,5]
 u = 5/2
 p = 2
 i = 5
-bases = Splines.basisfunctions(i,u,p,U)</code></pre><pre><code class="language-none">3-element Array{Float64,1}:
- 0.125
- 0.75
- 0.125</code></pre></div><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.basisfunctionsderivatives-NTuple{5,Any}" href="#Splines.basisfunctionsderivatives-NTuple{5,Any}"><code>Splines.basisfunctionsderivatives</code></a> — <span class="docstring-category">Method</span>.</div><div><div><pre><code class="language-none">basisfunctionsderivatives(i, u, p, n, U)</code></pre><p>Calculate the non-vanishing basis functions and derivatives of the B-Spline of order p, defined by knots U at parametric location u.</p><p>The basis function derivative is given by</p><div>\[N_{i,p}^{&#39;} = \frac{p}{u_{i+p} - u_i} N_{i,p-1}(u) - \frac{p}{u_{i+p+1} - u_{i+1}} N_{i+1,p-1}(u)\]</div><p>(see NURBS, eqn 2.7 and A2.3)</p><p>Inputs:</p><ul><li>i : knot span containing u</li><li>u : parametric point of interest</li><li>p : the curve order</li><li>n : the max derivative order (n ≦ p)</li><li>U : the knot vector</li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/BSpline.jl#L71-L91">source</a></section><p><strong>Example</strong></p><div><pre><code class="language-julia">U = [0,0,0,1,2,3,4,4,5,5,5]
+bases = Splines.basisfunctions(i,u,p,U)</p>
+<pre><code>
+
+```@docs
+Splines.basisfunctionsderivatives(i, u, p, n, U)
+</code></pre>
+
+<p><strong>Example</strong>
+```@example
+import Splines # hide
+U = [0,0,0,1,2,3,4,4,5,5,5]
 u = 5/2
 p = 2
 i = 5
 n = p
-derivatives = Splines.basisfunctionsderivatives(i,u,p,n,U)</code></pre><pre><code class="language-none">3×3 Array{Float64,2}:
-  0.125   0.75  0.125
- -0.5     0.0   0.5
-  1.0    -2.0   1.0</code></pre></div><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.curvederivatives1-NTuple{6,Any}" href="#Splines.curvederivatives1-NTuple{6,Any}"><code>Splines.curvederivatives1</code></a> — <span class="docstring-category">Method</span>.</div><div><div><pre><code class="language-none">curvederivatives1(n, p, U, P, u, d)</code></pre><p>Compute a curve point and its derivatives up do the dth derivative at parametric point u. (NURBS, A3.2)</p><p><strong>Inputs</strong></p><ul><li>n : the number of control points is n+1</li><li>p : the degree of the curve</li><li>U : the knot vector</li><li>P : the control points</li><li>u : the parametric point of interest</li><li>d : derivative order (0 ≤ k ≦ d)</li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/BSpline.jl#L210-L222">source</a></section><p><strong>Example</strong></p><div><pre><code class="language-julia">U = [0,0,0,1,2,3,4,4,5,5,5]
+derivatives = Splines.basisfunctionsderivatives(i,u,p,n,U)</p>
+<pre><code>
+```@docs
+Splines.curvederivatives1(n, p, U, P, u, d)
+</code></pre>
+
+<p><strong>Example</strong>
+```@example
+import Splines # hide
+U = [0,0,0,1,2,3,4,4,5,5,5]
 u = 5/2
 p = 2
 n = length(U)-p-1
 P = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]
 d = 1
-curveDerivatives = Splines.curvederivatives1(n, p, U, P, u, d)</code></pre><pre><code class="language-none">2×2 Array{Float64,2}:
- 1.5  0.375
- 0.5  0.0</code></pre></div><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.curvederivativecontrolpoints-NTuple{7,Any}" href="#Splines.curvederivativecontrolpoints-NTuple{7,Any}"><code>Splines.curvederivativecontrolpoints</code></a> — <span class="docstring-category">Method</span>.</div><div><div><pre><code class="language-none">curvederivativecontrolpoints(n, p, U, P, d, r1, r2)</code></pre><p>Compute control points of curve derivatives:</p><div>\[\mathbf{C}^{(k)}(u) = \sum_{i=0}^{n-k}N_{i,p-k}(u) \mathbf{P}_i^{(k)}\]</div><p>with</p><div>\[\mathbf{P}_i^{(k)} =
-\begin{cases}
-    \mathbf{P}_i &amp; k=0 \\
-    \frac{p-k+1}{u_{i+p+1}-u_{i+k}}\left(\mathbf{P}_{i+1}^{(k)} - \mathbf{P}_i^{(k)} \right) &amp; k &gt; 0
-\end{cases}\]</div><p>(see NURBS, eqn 3.8 and A3.3)</p><p><strong>Inputs</strong></p><ul><li>n : the number of control points is n+1</li><li>p : the degree of the curve</li><li>U : the knot vector</li><li>P : the control points</li><li>u : the parametric point of interest</li><li>d : derivative order (0 ≤ k ≦ d)</li><li>r1 : first control point index</li><li>r2 : last control point index</li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/BSpline.jl#L244-L272">source</a></section><p><strong>Example</strong></p><div><pre><code class="language-julia">U = [0,0,0,0,2/5,3/5,3/5,1,1,1,1]
+curveDerivatives = Splines.curvederivatives1(n, p, U, P, u, d)</p>
+<pre><code>
+```@docs
+Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
+</code></pre>
+
+<p><strong>Example</strong>
+```@example
+import Splines # hide
+U = [0,0,0,0,2/5,3/5,3/5,1,1,1,1]
 u = 1/2
 i = 4
 d = 1
@@ -88,49 +270,49 @@ P = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]
 n = length(P[:,1])-1
 r1 = 0
 r2 = n
-cprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)</code></pre><pre><code class="language-none">2×2×7 Array{Float64,3}:
-[:, :, 1] =
- 0.0   0.0
- 3.75  3.75
+cprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)</p>
+<pre><code>
 
-[:, :, 2] =
- 0.5   0.5
- 2.5  -2.5
 
-[:, :, 3] =
- 1.0  0.0
- 2.5  2.5
 
-[:, :, 4] =
- 1.5   0.5
- 2.5  -2.5
 
-[:, :, 5] =
- 2.0   0.0
- 3.75  3.75
 
-[:, :, 6] =
- 2.5    0.5
- 3.75  -3.75
+## NURBS Functions
 
-[:, :, 7] =
- 3.0  0.0
- 0.0  0.0</code></pre></div><h2><a class="nav-anchor" id="NURBS-Functions-1" href="#NURBS-Functions-1">NURBS Functions</a></h2><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.nurbsbasis" href="#Splines.nurbsbasis"><code>Splines.nurbsbasis</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">nurbsbasis(i,p,u,U,w)</code></pre><p>Get rational basis functions and derivatives. see eqn 4.2</p><div>\[R_{i,p}(u) = \frac{N_{i,p}(u)w_i}{\sum_{j=0}^n N_{j,p}(u)w_j}\]</div><p>where <span>$N_{i,p}(u )$</span> are B-Spline Basis Functions and <span>$w_i$</span> are weights associated with the NURBS control points.</p><p>Inputs:</p><ul><li>u : parametric point of interest</li><li>p : the curve order</li><li>n : the max derivative order (n ≦ p)</li><li>U : the knot vector</li><li>weights : control point weights</li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/NURBS.jl#L663-L682">source</a></section><p><em>Example</em></p><div><pre><code class="language-julia">U = [0,0,0,1,2,3,4,4,5,5,5] #knot vector
+```@docs
+Splines.nurbsbasis
+</code></pre>
+
+<p><em>Example</em>
+```@example
+import Splines #hide
+U = [0,0,0,1,2,3,4,4,5,5,5] #knot vector
 w = [1,1,1,1,1,1,1] #control point weights
 u = 5/2 #parametric point of interest
 p = 2 #curve degree
 n = 1 #number of derivatives
-R, dR = Splines.nurbsbasis(u,p,n,U,w) #rational bases and first derivatives</code></pre><pre><code class="language-none">([0.125, 0.75, 0.125], [-0.5, 0.0, 0.5])</code></pre></div><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.curvepoint" href="#Splines.curvepoint"><code>Splines.curvepoint</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">curvepoint(n, p, U, Pw, u)</code></pre><p>Compute point on rational B-Spline curve defined as:</p><div>\[\mathbf{C}^w(u) = \sum_{i=0}^n N_{i, p}(u) \mathbf{P}_i^w\]</div><p>where <span>$\mathbf{P}_i^w$</span> are the set of weighted control points and weights such that <span>$\mathbf{P}_i^w = (w_ix_i, w_iy_i, w_iz_i, w_i)$</span>.</p><p>(see NURBS, eqn 4.5 and A4.1)</p><p>Inputs:</p><ul><li>n : the number of control points minus 1 (the index of the last control point)</li><li>p : the curve order</li><li>U : the knot vector</li><li>Pw : the set of weighted control points and weights</li><li>u : the parametric point of interest</li></ul><p>TODO: if u value outside of U vector range is given, function hangs, but doesn&#39;t throw error. Need to add a check/error.</p></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/NURBS.jl#L1-L22">source</a></section><p><strong>Examples</strong></p><p><em>example 1: single point</em></p><div><pre><code class="language-julia">U = [0, 0, 0, 1, 1, 1] #knot vector
+R, dR = Splines.nurbsbasis(u,p,n,U,w) #rational bases and first derivatives</p>
+<pre><code>
+```@docs
+Splines.curvepoint
+</code></pre>
+
+<p><strong>Examples</strong></p>
+<p><em>example 1: single point</em>
+```@example
+import Splines # hide
+U = [0, 0, 0, 1, 1, 1] #knot vector
 u = 0 #parametric point of interest
 p = 2 #curve order
 P = [1 0; 1 1; 0 1] #unweighted points
 w = [1 1 2] #weights
 Pw = [1 0 1; 1 1 1; 0 2 2] #weighted points
 n = length(P[:, 1])-1
-Cw = Splines.curvepoint(n, p, U, Pw, u)</code></pre><pre><code class="language-none">3-element Array{Float64,1}:
- 1.0
- 0.0
- 1.0</code></pre></div><div></div><p><em>example 2: array of points</em></p><div><pre><code class="language-julia">U = [0, 0, 0, 1, 1, 1] #knot vector
+Cw = Splines.curvepoint(n, p, U, Pw, u)</p>
+<pre><code>
+```@setup nurbs_circle
+import Splines
+U = [0, 0, 0, 1, 1, 1] #knot vector
 u = collect(0:0.05:1.0) #parametric points
 p = 2 #curve order
 P = [1 0; 1 1; 0 1] #unweighted points
@@ -140,29 +322,100 @@ n = length(P[:, 1])-1
 Cw = zeros(length(u), length(Pw[1, :]))
 for i = 1:length(u)
   Cw[i, :] = Splines.curvepoint(n, p, U, Pw, u[i])
-end</code></pre></div><p><img src="../nurbscircle.svg" alt/></p><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.rationalcurvederivatives" href="#Splines.rationalcurvederivatives"><code>Splines.rationalcurvederivatives</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">rationalcurvederivatives(Aders, wders, d)</code></pre><p>Compute the point <span>$\mathbf{C}(u)$</span> and the derivatives <span>$\mathbf{C}^{(k)}(u)$</span> for <span>$1 \leq k \leq d$</span> where:</p><div>\[\mathbf{C}^{(k)}(u) = \frac{ \mathbf{A}^{(k)}(u) - \sum_{i=1}^k \binom{k}{i} w^{(i)}(u) \mathbf{C}^{(k-1)}(u) }{w(u)}\]</div><p>where <span>$\mathbf{A}^{(k)}(u)$</span> and <span>$w^{(i)}(u)$</span> are precomputed using preweighted control points for some parametric point, <span>$0 \leq u \leq 1$</span>, from <code>curvederivatives1</code> and are inputs Aders and wders, respectively.</p><p>(see NURBS eqn 4.8 and A4.2)</p></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/NURBS.jl#L45-L57">source</a></section><p><strong>Example</strong></p><div><pre><code class="language-julia">U = [0, 0, 0, 1, 1, 1] #knot vector
+end
+
+
+using Plots
+
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(Cw[:, 1], Cw[:, 2], linewidths=10, aspectratio=:equal, grid=:off, label=&quot;NURBS&quot;)
+plot!(P[:, 1], P[:, 2], markersizes=10, markershapes=:square, linewidths=10, label=&quot;Control Points&quot;)
+savefig(&quot;nurbscircle.svg&quot;)
+</code></pre>
+
+<p><em>example 2: array of points</em>
+```@example nurbs_circle
+U = [0, 0, 0, 1, 1, 1] #knot vector
+u = collect(0:0.05:1.0) #parametric points
+p = 2 #curve order
+P = [1 0; 1 1; 0 1] #unweighted points
+w = [1 1 2] #weights
+Pw = [1 0 1; 1 1 1; 0 2 2] #weighted points
+n = length(P[:, 1])-1
+Cw = zeros(length(u), length(Pw[1, :]))
+for i = 1:length(u)
+  Cw[i, :] = Splines.curvepoint(n, p, U, Pw, u[i])
+end</p>
+<pre><code>
+![](nurbscircle.svg)
+
+
+
+```@docs
+Splines.rationalcurvederivatives
+</code></pre>
+
+<p><strong>Example</strong></p>
+<p>```@example
+import Splines # hide
+U = [0, 0, 0, 1, 1, 1] #knot vector
 u = 0 #parametric point of interest
 p = 2 #curve order
 P = [1 0; 1 1; 0 1] #unweighted points
 w = [1 1 2] #weights
 Pw = [1 0 1; 1 1 1; 0 2 2] #weighted points
 n = length(P[:, 1])-1
-d = 2 #max derivative level (2nd derivative)
-#Calculate Cw(u) derivatives
-ders = Splines.curvederivatives1(n, p, U, Pw, u, d)
-#Separate derivatives
-Aders = ders[:, 1:end-1]
-wders = ders[:, end]
-#Calculate NURBS derivatives
-CK = Splines.rationalcurvederivatives(Aders, wders, d)</code></pre><pre><code class="language-none">3×2 Array{Float64,2}:
-  1.0  0.0
-  0.0  2.0
- -4.0  0.0</code></pre></div><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.curveknotinsertion" href="#Splines.curveknotinsertion"><code>Splines.curveknotinsertion</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">curveknotinsertion(np, p, UP, Pw, u, k, s, r)</code></pre><p>Compute a new curve from knot insertion. Using the formula:</p><div>\[\mathbf{Q}_{i, r}^w = \alpha_{i, r} \mathbf{Q}_{i, r-1}^w + (1-\alpha_{i, r}) \mathbf{Q}_{i-1, r-1}^w\]</div><p>where</p><div>\[\alpha_{i, r} =
-\begin{cases}
-     1 &amp; i \leq k-p+r-1 \\
-     \frac{\bar{u} - u_i}{u_{i+p-r+1} - \bar{u}_i} &amp; k-p+r \leq i\leq k-s \\
-     0 &amp; i \geq k-s+1
-\end{cases}\]</div><p>(see NURBS eqn 5.15 and A5.1)</p><p>Inputs:</p><ul><li>np : the number of control points minus 1 (the index of the last control point) before insertion</li><li>p : the curve order</li><li>UP : the knot vector before insertion</li><li>Pw : the set of weighted control points and weights before insertion</li><li>u : the parametric point of interest</li><li>k : the span index at which the knot is to be inserted.</li><li>s : numer of instances of the new knot alrady present in the knot vector, UP</li><li>r : number of times the new knot is inserted (it is assumed that <span>$r+s \leq p$</span> )</li></ul><p>Outputs:</p><ul><li>nq : the number of control points minus 1 (the index of the last control point) after insertion</li><li>UQ : the knot vector after insertion</li><li>Qw : the set of weighted control points and weights after insertion</li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/NURBS.jl#L77-L112">source</a></section><p><strong>Examples</strong></p><p><em>example 1: Unique Knot Insertion</em></p><div></div><div><pre><code class="language-julia">UP = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
+d = 2 #max derivative level (2nd derivative)</p>
+<h1 id="calculate-cwu-derivatives">Calculate Cw(u) derivatives</h1>
+<p>ders = Splines.curvederivatives1(n, p, U, Pw, u, d)</p>
+<h1 id="separate-derivatives">Separate derivatives</h1>
+<p>Aders = ders[:, 1:end-1]
+wders = ders[:, end]</p>
+<h1 id="calculate-nurbs-derivatives">Calculate NURBS derivatives</h1>
+<p>CK = Splines.rationalcurvederivatives(Aders, wders, d)</p>
+<pre><code>
+
+
+```@docs
+Splines.curveknotinsertion
+</code></pre>
+
+<p><strong>Examples</strong></p>
+<p><em>example 1: Unique Knot Insertion</em>
+```@setup unique_knot_insertion
+import Splines
+using Plots</p>
+<p>UP = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
+u = 5/2
+p = 3
+P = [0 0; 1 1; 2 0; 3 0; 4 1; 3 2; 2 2; 1.5 1]
+w = [1 1 1 1 1 1 1 1]
+Pw = [0 0 1; 1 1 1; 2 0 1; 3 0 1; 4 1 1; 3 2 1; 2 2 1; 1.5 1 1]
+np = length(P[:, 1])-1
+k = 5
+s = 0
+r = 1</p>
+<p>nq, UQ, Qw = Splines.curveknotinsertion(np, p, UP, Pw, u, k, s, r)</p>
+<p>curvepoints = collect(0:0.1:5)
+Cw1 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+  Cw1[i, :] = Splines.curvepoint(np, p, UP, Pw, curvepoints[i])
+end</p>
+<p>curvepoints = collect(0:0.1:5)
+Cw2 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+  Cw2[i, :] = Splines.curvepoint(nq, p, UQ, Qw, curvepoints[i])
+end</p>
+<p>plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label="Original Spline")
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label="New Spline")
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label="Original CP's")
+plot!(Qw[4:6, 1], Qw[4:6, 2], markersizes=10, markershapes=:circle, linestyle=:dash, linewidths=7, label="New Control Points")
+savefig("uniqueknotinsert.svg")</p>
+<pre><code>
+```@example unique_knot_insertion
+UP = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
 u = 5/2
 p = 3
 P = [0 0; 1 1; 2 0; 3 0; 4 1; 3 2; 2 2; 1.5 1]
@@ -173,7 +426,45 @@ k = 5
 s = 0
 r = 1
 
-nq, UQ, Qw = Splines.curveknotinsertion(np, p, UP, Pw, u, k, s, r)</code></pre><pre><code class="language-none">(8, [0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.5, 3.0, 4.0, 5.0, 5.0, 5.0, 5.0], [0.0 0.0 1.0; 1.0 1.0 1.0; … ; 2.0 2.0 1.0; 1.5 1.0 1.0])</code></pre></div><p><img src="../uniqueknotinsert.svg" alt/></p><p><em>example 2: Repeated Knot Insertion</em></p><div></div><div><pre><code class="language-julia">UP = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
+nq, UQ, Qw = Splines.curveknotinsertion(np, p, UP, Pw, u, k, s, r)
+</code></pre>
+
+<p><img alt="" src="uniqueknotinsert.svg" /></p>
+<p><em>example 2: Repeated Knot Insertion</em>
+```@setup unique_knot_insertion
+import Splines
+using Plots</p>
+<p>UP = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
+u = 2
+p = 3
+P = [0 0; 1 1; 2 0; 3 0; 4 1; 3 2; 2 2; 1.5 1]
+w = [1 1 1 1 1 1 1 1]
+Pw = [0 0 1; 1 1 1; 2 0 1; 3 0 1; 4 1 1; 3 2 1; 2 2 1; 1.5 1 1]
+np = length(P[:, 1])-1
+k = 5
+s = 1
+r = 1</p>
+<p>nq, UQ, Qw = Splines.curveknotinsertion(np, p, UP, Pw, u, k, s, r)</p>
+<p>curvepoints = collect(0.0:0.1:5.0)
+Cw1 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+  Cw1[i, :] = Splines.curvepoint(np, p, UP, Pw, curvepoints[i])
+end</p>
+<p>curvepoints = collect(0.0:0.1:5.0)
+Cw2 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+  Cw2[i, :] = Splines.curvepoint(nq, p, UQ, Qw, curvepoints[i])
+end</p>
+<p>plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label="Original Spline")
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label="New Spline")
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label="Original CP's")
+plot!(Qw[4:6, 1], Qw[4:6, 2], markersizes=10, markershapes=:circle, linestyle=:dash, linewidths=7, label="New Control Points")
+savefig("repeatknotinsert.svg")</p>
+<pre><code>
+```@example unique_knot_insertion
+UP = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
 u = 2
 p = 3
 P = [0 0; 1 1; 2 0; 3 0; 4 1; 3 2; 2 2; 1.5 1]
@@ -184,14 +475,103 @@ k = 5
 s = 1
 r = 1
 
-nq, UQ, Qw = Splines.curveknotinsertion(np, p, UP, Pw, u, k, s, r)</code></pre><pre><code class="language-none">(8, [0.0, 0.0, 0.0, 0.0, 1.0, 2.0, 2.0, 3.0, 4.0, 5.0, 5.0, 5.0, 5.0], [0.0 0.0 1.0; 1.0 1.0 1.0; … ; 2.0 2.0 1.0; 1.5 1.0 1.0])</code></pre></div><p><img src="../repeatknotinsert.svg" alt/></p><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.refineknotvectorcurve" href="#Splines.refineknotvectorcurve"><code>Splines.refineknotvectorcurve</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">refineknotvectorcurve(n, p, U, Pw, X, r)</code></pre><p>Refine curve knot vector using NURBS A5.4.</p><p>This algorithm is simply a knot insertion algorithm that allows for multiple knots to be added simulataneously, i.e., a knot refinement procedure.</p><p>Inputs:</p><ul><li>n : the number of control points minus 1 (the index of the last control point) before insertion</li><li>p : the curve order</li><li>U : the knot vector before insertion</li><li>Pw : the set of weighted control points and weights before insertion</li><li>X : elements, in ascending order, to be inserted into U (elements should be repeated according to their multiplicities, e.g., if x and y have multiplicites 2 and 3, X = [x,x,y,y,y])</li><li>r : length of X vector</li></ul><p>Outputs:</p><ul><li>Ubar : the knot vector after insertion</li><li>Qw : the set of weighted control points and weights after insertion</li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/NURBS.jl#L171-L189">source</a></section><p><strong>Example</strong></p><div></div><div><pre><code class="language-julia">U = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5] #original knot vector
+nq, UQ, Qw = Splines.curveknotinsertion(np, p, UP, Pw, u, k, s, r)
+</code></pre>
+
+<p><img alt="" src="repeatknotinsert.svg" /></p>
+<p>```@docs
+Splines.refineknotvectorcurve</p>
+<pre><code>
+**Example**
+
+```@setup multi_knot_insertion
+import Splines
+using Plots
+
+
+U = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5]
+X = [1.5, 2.5]
+p = 3
+P = [0 0; 1 1; 2 0; 3 0; 4 1; 3 2; 2 2; 1.5 1]
+w = [1 1 1 1 1 1 1 1]
+Pw = [0 0 1; 1 1 1; 2 0 1; 3 0 1; 4 1 1; 3 2 1; 2 2 1; 1.5 1 1]
+n = length(P[:,1])-1
+r = length(X)-1
+
+Ubar, Qwcalcd = Splines.refineknotvectorcurve(n, p, U, Pw, X, r)
+
+nq, UQ, Qw = Splines.curveknotinsertion(n, p, U, Pw, X[1], 4, 0, 1)
+nq, UQ, Qw = Splines.curveknotinsertion(nq, p, UQ, Qw, X[2], 6, 0, 1)
+
+curvepoints = collect(0:0.1:5)
+Cw1 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+    Cw1[i, :] = Splines.curvepoint(n, p, U, Pw, curvepoints[i])
+end
+
+curvepoints = collect(0:0.1:5)
+Cw2 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+    Cw2[i, :] = Splines.curvepoint(nq, p, Ubar, Qwcalcd, curvepoints[i])
+end
+
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label=&quot;Original Spline&quot;)
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label=&quot;New Spline&quot;)
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label=&quot;Original CP's&quot;)
+plot!(Qw[2:6, 1], Qw[2:6, 2], markersizes=10, markershapes=:circle, linestyle=:dash, linewidths=7, label=&quot;New Control Points&quot;)
+savefig(&quot;multiknotinsert.svg&quot;)
+</code></pre>
+
+<p>```@example multi_knot_insertion
+U = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5] #original knot vector
 X = [1.5, 2.5] #knots to be added (ascending order)
 p = 3 #curve order
 Pw = [0 0 1; 1 1 1; 2 0 1; 3 0 1; 4 1 1; 3 2 1; 2 2 1; 1 1 1] #weighted control points
 n = length(P[:,1])-1 #largest zero-based index in control point vector
-r = length(X)-1 #largest zero-based index in X (vector of knots to be added)
+r = length(X)-1 #largest zero-based index in X (vector of knots to be added)</p>
+<p>Ubar, Qw = Splines.refineknotvectorcurve(n, p, U, Pw, X, r)</p>
+<pre><code>
+![](multiknotinsert.svg)
 
-Ubar, Qw = Splines.refineknotvectorcurve(n, p, U, Pw, X, r)</code></pre><pre><code class="language-none">([0.0, 0.0, 0.0, 0.0, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0, 5.0, 5.0, 5.0, 5.0], [0.0 0.0 1.0; 1.0 1.0 1.0; … ; 2.0 2.0 1.0; 1.0 1.0 1.0])</code></pre></div><p><img src="../multiknotinsert.svg" alt/></p><section class="docstring"><div class="docstring-header"><a class="docstring-binding" id="Splines.degreeelevatecurve" href="#Splines.degreeelevatecurve"><code>Splines.degreeelevatecurve</code></a> — <span class="docstring-category">Function</span>.</div><div><div><pre><code class="language-none">degreeelevatecurve(n,p,U,Pw,t)</code></pre><p>Raise degree of spline from p to p <span>$+t$</span>, <span>$t \geq 1$</span> by computing the new control point vector and knot vector.</p><p>Knots are inserted to divide the spline into equivalent Bezier Curves. These curves are then degree elevated using the following equation.</p><div>\[\mathbf{P}^t_i = \sum^{\textrm{min}(p,i)}_{j=\textrm{max}(0,i-t)} \frac{\binom{p}{j} \binom{t}{i-j} \mathbf{P}_j}{\binom{p+t}{i}}~,~~~~~i=0,...,p+t\]</div><p>where <span>$\mathbf{P}^t_i$</span> are the degree elevated control points after <span>$t$</span> -degree elevations</p><p>Finally, the excess knots are removed and the degree elevated spline is returned.</p><p>(see NURBS eqn 5.36, A5.9)</p><p>Inputs:</p><ul><li>n : the number of control points minus 1 (the index of the last control point) before degree elevation</li><li>p : the curve order</li><li>U : the knot vector before degree elevation</li><li>Pw : the set of weighted control points and weights before degree elevation</li><li>t : the number of degrees to elevate, i.e. the new curve degree is p+t</li></ul><p>Outputs:</p><ul><li>nh : the number of control points minus 1 (the index of the last control point) after degree elevation</li><li>Uh : the knot vector after degree elevation</li><li>Qw : the set of weighted control points and weights after degree elevation</li></ul></div></div><a class="source-link" target="_blank" href="https://github.com/byuflowlab/Splines.jl/blob/32523bb98c1383be9c24a7528b099b1788b18ca7/src/NURBS.jl#L326-L353">source</a></section><p><strong>Examples</strong></p><p><em>example 1: Single Degree Elevation</em></p><div></div><div><pre><code class="language-julia">U = [0,0,0,0,3/10,7/10,1,1,1,1]
+
+```@docs
+Splines.degreeelevatecurve
+</code></pre>
+
+<p><strong>Examples</strong></p>
+<p><em>example 1: Single Degree Elevation</em>
+```@setup 1-degree-elevation
+import Splines
+using Plots</p>
+<p>U = [0,0,0,0,3/10,7/10,1,1,1,1]
+p = 3
+P = [-1 0; -1.5 1; -0.5 2; 0.5 2; 1.5 1; 1 0]
+w = [1 1 1 1 1 1]
+Pw = [-1 0 1; -1.5 1 1; -0.5 2 1; 0.5 2 1; 1.5 1 1; 1 0 1]
+n = length(P[:,1])-1
+t = 1</p>
+<p>nh, Uh, Qw = Splines.degreeelevatecurve(n,p,U,Pw,t)</p>
+<p>curvepoints = collect(0:0.01:1)
+Cw1 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+  Cw1[i, :] = Splines.curvepoint(n, p, U, Pw, curvepoints[i])
+end</p>
+<p>Cw2 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+  Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
+end</p>
+<p>plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label="Original Spline")
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label="New Spline")
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label="Original CP's")
+plot!(Qw[2:end-1, 1], Qw[2:end-1, 2], markersizes=10, markershapes=:circle, linestyle=:dash,linewidths=7,  label="New Control Points")
+savefig("1degreeelevate.svg")</p>
+<pre><code>
+```@example 1-degree-elevation
+U = [0,0,0,0,3/10,7/10,1,1,1,1]
 p = 3
 P = [-1 0; -1.5 1; -0.5 2; 0.5 2; 1.5 1; 1 0]
 w = [1 1 1 1 1 1]
@@ -199,7 +579,41 @@ Pw = [-1 0 1; -1.5 1 1; -0.5 2 1; 0.5 2 1; 1.5 1 1; 1 0 1]
 n = length(P[:,1])-1
 t = 1
 
-nh, Uh, Qw = Splines.degreeelevatecurve(n,p,U,Pw,t)</code></pre><pre><code class="language-none">(8, [0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.7, 0.7, 1.0, 1.0, 1.0, 1.0, 1.0], [-1.0 0.0 1.0; -1.375 0.75 1.0; … ; 1.375 0.75 1.0; 1.0 0.0 1.0])</code></pre></div><p><img src="../1degreeelevate.svg" alt/></p><p><em>example 2: 2 Degree Elevation</em></p><div></div><div><pre><code class="language-julia">U = [0,0,0,0,3/10,7/10,1,1,1,1]
+nh, Uh, Qw = Splines.degreeelevatecurve(n,p,U,Pw,t)
+</code></pre>
+
+<p><img alt="" src="1degreeelevate.svg" /></p>
+<p><em>example 2: 2 Degree Elevation</em>
+```@setup 2-degree-elevation
+import Splines
+using Plots</p>
+<p>U = [0,0,0,0,3/10,7/10,1,1,1,1]
+p = 3
+P = [-1 0; -1.5 1; -0.5 2; 0.5 2; 1.5 1; 1 0]
+w = [1 1 1 1 1 1]
+Pw = [-1 0 1; -1.5 1 1; -0.5 2 1; 0.5 2 1; 1.5 1 1; 1 0 1]
+n = length(P[:,1])-1
+t = 2</p>
+<p>nh, Uh, Qw = Splines.degreeelevatecurve(n,p,U,Pw,t)</p>
+<p>curvepoints = collect(0:0.01:1)
+Cw1 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+  Cw1[i, :] = Splines.curvepoint(n, p, U, Pw, curvepoints[i])
+end</p>
+<p>Cw2 = zeros(length(curvepoints), length(Pw[1, :]))
+for i = 1:length(curvepoints)
+  Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
+end</p>
+<p>plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24)
+plot!(linewidths=10, aspectratio=:equal, grid=:off)
+plot!(Cw1[:, 1], Cw1[:, 2], linewidths=10, label="Original Spline")
+plot!(Cw2[:, 1], Cw2[:, 2], linestyle=:dot, linewidths=10, label="New Spline")
+plot!(Pw[:, 1], Pw[:, 2], markersizes=10, markershapes=:square, linewidths=7, label="Original CP's")
+plot!(Qw[2:end-1, 1], Qw[2:end-1, 2], markersizes=10, markershapes=:circle, linestyle=:dash,linewidths=7,  label="New Control Points")
+savefig("2degreeelevation.svg")</p>
+<pre><code>
+```@example 2-degree-elevation
+U = [0,0,0,0,3/10,7/10,1,1,1,1]
 p = 3
 P = [-1 0; -1.5 1; -0.5 2; 0.5 2; 1.5 1; 1 0]
 w = [1 1 1 1 1 1]
@@ -207,4 +621,59 @@ Pw = [-1 0 1; -1.5 1 1; -0.5 2 1; 0.5 2 1; 1.5 1 1; 1 0 1]
 n = length(P[:,1])-1
 t = 2
 
-nh, Uh, Qw = Splines.degreeelevatecurve(n,p,U,Pw,t)</code></pre><pre><code class="language-none">(11, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.3, 0.3, 0.3, 0.7, 0.7, 0.7, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], [-1.0 0.0 1.0; -1.3 0.6 1.0; … ; 1.3 0.6 1.0; 1.0 0.0 1.0])</code></pre></div><p><img src="../2degreeelevation.svg" alt/></p><footer><hr/><a class="next" href="../"><span class="direction">Next</span><span class="title">Splines.jl</span></a></footer></article></body></html>
+nh, Uh, Qw = Splines.degreeelevatecurve(n,p,U,Pw,t)
+</code></pre>
+
+<p><img alt="" src="2degreeelevation.svg" /></p></div>
+        
+    </div>
+
+    <footer class="col-md-12 text-center">
+        <hr>
+        <p>
+        <small>Documentation built with <a href="http://www.mkdocs.org/">MkDocs</a>.</p></small>
+    </footer>
+
+    <script src="../js/jquery-1.10.2.min.js"></script>
+    <script src="../js/bootstrap-3.0.3.min.js"></script>
+    <script src="../js/highlight.pack.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script>
+    var base_url = '..';
+    </script>
+    <script data-main="../mkdocs/js/search.js" src="../mkdocs/js/require.js"></script>
+    <script src="../js/base.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS_HTML"></script>
+    <script src="../assets/mathjaxhelper.js"></script>
+    <script src="../search/main.js"></script>
+
+    <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="Search Modal" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">
+                        <span aria-hidden="true">&times;</span>
+                        <span class="sr-only">Close</span>
+                    </button>
+                    <h4 class="modal-title" id="exampleModalLabel">Search</h4>
+                </div>
+                <div class="modal-body">
+                    <p>
+                        From here you can search these documents. Enter your search terms below.
+                    </p>
+                    <form role="form">
+                        <div class="form-group">
+                            <input type="text" class="form-control" placeholder="Search..." id="mkdocs-search-query">
+                        </div>
+                    </form>
+                    <div id="mkdocs-search-results"></div>
+                </div>
+                <div class="modal-footer">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    </body>
+
+</html>
