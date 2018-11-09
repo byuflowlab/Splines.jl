@@ -21,7 +21,7 @@ Pages = ["Functions.md"]
 Depth = 2
 ```
 
-##About
+## About
 ```@contents
-Pages = ["../../LICENSE.md"]
+Pages = ["license.md"]
 ```
