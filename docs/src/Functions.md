@@ -1,7 +1,5 @@
 # Functions
 
-The majority of the functions listed below come from *The NURBS Book* by Les Piegl and Wayne Tiller, hereafter referred to as "NURBS" when referencing equations and/or algorithms.
-
 ## Bezier Functions
 ```@docs
 Splines.binomialcoeff
