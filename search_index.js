@@ -173,7 +173,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Splines.jl",
     "title": "Functions",
     "category": "section",
-    "text": "Descriptions of available methods along with example implementations can be found on the functions page.Pages = [\"Functions.md\"]\nDepth = 2"
+    "text": "Descriptions of available methods along with example implementations can be found on the functions page.Pages = [\"Functions.md\"]\nDepth = 2##AboutPages = [\"../../LICENSE.md\"]"
 },
 
 ]}
