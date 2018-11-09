@@ -21,6 +21,6 @@ markdown_extensions:
 docs_dir: 'build'
 
 nav:
-  - Home: 'src/index.md'
+  - Home: '../src/index.md'
   - About:
-    - 'License': 'src/license.md'
+    - 'License': '../src/license.md'
