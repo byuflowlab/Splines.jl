@@ -661,9 +661,9 @@ end
 # end
 
 """
-    nurbsbasis(i,p,u,U,w)
+    nurbsbasis(u,p,d,U,w)
 
-Get rational basis functions and derivatives. see eqn 4.2
+Get rational basis functions and derivatives.
 
 ```math
 R_{i,p}(u) = \\frac{N_{i,p}(u)w_i}{\\sum_{j=0}^n N_{j,p}(u)w_j}
@@ -671,16 +671,18 @@ R_{i,p}(u) = \\frac{N_{i,p}(u)w_i}{\\sum_{j=0}^n N_{j,p}(u)w_j}
 
 where `` N_{i,p}(u ) `` are B-Spline Basis Functions and `` w_i `` are weights associated with the NURBS control points.
 
+(see NURBS eqn 4.2)
+
 Inputs:
 
 - u : parametric point of interest
 - p : the curve order
-- n : the max derivative order (n ≦ p)
+- d : the max derivative order (n ≦ p)
 - U : the knot vector
-- weights : control point weights
+- w : control point weights
 
 """
-function nurbsbasis(u,p,d,U,weights)
+function nurbsbasis(u,p,d,U,w)
     #get the span index
     # println("gettin index")
     # println("d = ", d)
@@ -691,7 +693,7 @@ function nurbsbasis(u,p,d,U,weights)
     i = getspanindex(n, p, u, U)
     # println("i = ", i)
     #!this may not be right, make sure that these weights are right (doesn't matter if weights are always 1, but they may not be)
-    w = weights[i:i+p]
+    weights = w[i:i+p]
     # println("weights = ", w)
     #get B-Spline basis functions and derivatives for numerator
     bases = Splines.basisfunctionsderivatives(i+1,u,p,d,U)
@@ -708,8 +710,8 @@ function nurbsbasis(u,p,d,U,weights)
 
     #calculate the denomenator values
     for j=1:numbasisfunctions
-        Nw += N[j] .* w[j]
-        dNw += dN[j] .* w[j]
+        Nw += N[j] .* weights[j]
+        dNw += dN[j] .* weights[j]
     end
     # println("Nw = ", Nw)
     # println("dNw = ", dNw)
@@ -717,8 +719,8 @@ function nurbsbasis(u,p,d,U,weights)
     R = zeros(length(N))
     dR = zeros(size(N))
     for j=1:numbasisfunctions
-        R[j] = N[j]/Nw .* w[j]
-        dR[j] = w[j] .* (Nw*dN[j] - dNw*N[j]) ./ Nw^2
+        R[j] = N[j]/Nw .* weights[j]
+        dR[j] = weights[j] .* (Nw*dN[j] - dNw*N[j]) ./ Nw^2
     end
     # println("R = ", R)
     # println("dR = ", dR)

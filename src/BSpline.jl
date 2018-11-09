@@ -1,7 +1,7 @@
 """
     getspanindex(n, p, u, U)
 
-Complete binary search to find span index of vector, U, in which knot, u, lies. (NURBS A2.1)
+Complete binary search to find span index of vector, U, in which the parametric point, u, lies. (NURBS A2.1)
 """
 function getspanindex(n, p, u, U)
     # println("Getting Span Index, u = $u")
@@ -29,7 +29,7 @@ end
 """
     basisFunctions(i, u, p, U)
 
-Calculate the non-vanishing basis functions of the B-Spline of order p, defined by knots U at knot u.
+Calculate the non-vanishing basis functions of the B-Spline of order p, defined by knots U at parametric point, ``u``.
 
 The formula for the basis functions is:
 
@@ -71,7 +71,7 @@ end
 """
     basisfunctionsderivatives(i, u, p, n, U)
 
-Calculate the non-vanishing basis functions and derivatives of the B-Spline of order p, defined by knots U at parametric location u.
+Calculate the non-vanishing basis functions and derivatives of the B-Spline of order ``p```, defined by knots U at parametric point, ``u``.
 
 The basis function derivative is given by
 
@@ -210,7 +210,7 @@ end #function
 """
     curvederivatives1(n, p, U, P, u, d)
 
-Compute a curve point and its derivatives up do the dth derivative at parametric point u. (NURBS, A3.2)
+Compute a curve point and its derivatives up do the dth derivative at parametric point, ``u``. (NURBS, A3.2)
 
 #### Inputs
 - n : the number of control points is n+1

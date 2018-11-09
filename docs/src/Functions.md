@@ -5,8 +5,6 @@
 Splines.binomialcoeff
 ```
 
-let n = 6 and i = 2. We calculate n choose i (which in this case is 15) by calling the ```binomialcoeff``` function:
-
 **Example**
 ```@example
 import Splines # hide
