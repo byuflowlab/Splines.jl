@@ -1,6 +1,38 @@
 var documenterSearchIndex = {"docs": [
 
 {
+    "location": "#",
+    "page": "Home",
+    "title": "Home",
+    "category": "page",
+    "text": ""
+},
+
+{
+    "location": "#Splines.jl-1",
+    "page": "Home",
+    "title": "Splines.jl",
+    "category": "section",
+    "text": "CurrentModule = SplinesSplines.jl is a work-in-progress splines package focusing on Bézier curves, Basis Splines (B-Splines), and Non-uniform Rational B-Splines (NURBS). As of now, the available methods are transcribed from algorithms, or created from equations found in The NURBS Book by Les Piegl and Wayne Tiller, hereafter referred to as \"NURBS\" when referencing equations and/or algorithms.The algorithms outlined in the text are for C/C++ code. The C language, and the theory as presented is zero indexed. In an effort to preserve the algorithms as displayed in the text, and to keep the native Julia 1-indexing, indices are typically left as-is from the text with the addition of a \'+1\'.For FLOW Lab students, a quick intro to pertinent spline theory can be found in the FLOW Lab Notebook, but for in depth explanation The NURBS Book is the recommended resource.Note that this package has been created primarily for research purposes, so only basic tools required for that research have been implemented at this time. As the research progresses, more methods will be added as required."
+},
+
+{
+    "location": "#Functions-1",
+    "page": "Home",
+    "title": "Functions",
+    "category": "section",
+    "text": "Descriptions of available methods along with example implementations can be found on the functions page.Pages = [\"Functions.md\"]\nDepth = 2"
+},
+
+{
+    "location": "#About-1",
+    "page": "Home",
+    "title": "About",
+    "category": "section",
+    "text": "License"
+},
+
+{
     "location": "Functions/#",
     "page": "Functions",
     "title": "Functions",
@@ -153,48 +185,16 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "#",
-    "page": "Splines.jl",
-    "title": "Splines.jl",
-    "category": "page",
-    "text": ""
-},
-
-{
-    "location": "#Splines.jl-1",
-    "page": "Splines.jl",
-    "title": "Splines.jl",
-    "category": "section",
-    "text": "CurrentModule = SplinesSplines.jl is a work-in-progress splines package focusing on Bézier curves, Basis Splines (B-Splines), and Non-uniform Rational B-Splines (NURBS). As of now, the available methods are transcribed from algorithms, or created from equations found in The NURBS Book by Les Piegl and Wayne Tiller, hereafter referred to as \"NURBS\" when referencing equations and/or algorithms.The algorithms outlined in the text are for C/C++ code. The C language, and the theory as presented is zero indexed. In an effort to preserve the algorithms as displayed in the text, and to keep the native Julia 1-indexing, indices are typically left as-is from the text with the addition of a \'+1\'.For FLOW Lab students, a quick intro to pertinent spline theory can be found in the FLOW Lab Notebook, but for in depth explanation The NURBS Book is the recommended resource.Note that this package has been created primarily for research purposes, so only basic tools required for that research have been implemented at this time. As the research progresses, more methods will be added as required."
-},
-
-{
-    "location": "#Functions-1",
-    "page": "Splines.jl",
-    "title": "Functions",
-    "category": "section",
-    "text": "Descriptions of available methods along with example implementations can be found on the functions page.Pages = [\"Functions.md\"]\nDepth = 2"
-},
-
-{
-    "location": "#About-1",
-    "page": "Splines.jl",
-    "title": "About",
-    "category": "section",
-    "text": "License"
-},
-
-{
     "location": "license/#",
-    "page": "License",
-    "title": "License",
+    "page": "About",
+    "title": "About",
     "category": "page",
     "text": ""
 },
 
 {
     "location": "license/#License-1",
-    "page": "License",
+    "page": "About",
     "title": "License",
     "category": "section",
     "text": "The Splines.jl package is licensed under the MIT \"Expat\" License:Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE."
