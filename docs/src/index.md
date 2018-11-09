@@ -22,7 +22,4 @@ Depth = 2
 ```
 
 ## About
-```@contents
-Pages = ["license.md"]
-Depth = 1
-```
+[License](license.md)
