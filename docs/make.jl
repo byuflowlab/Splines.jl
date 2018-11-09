@@ -6,6 +6,9 @@ makedocs(
     build   = "./build",
     authors = "Judd Mehr",
     sitename = "Splines.jl",
+    pages = ["Home" => "index.md",
+             "Functions" => "Functions.md",
+             "About" => "license.md"]
 )
 
 deploydocs(
