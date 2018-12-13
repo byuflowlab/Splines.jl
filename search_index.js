@@ -17,9 +17,9 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
-    "location": "#Functions-1",
+    "location": "#Links-to-Function-Descriptions-1",
     "page": "Home",
-    "title": "Functions",
+    "title": "Links to Function Descriptions",
     "category": "section",
     "text": "Descriptions of available methods along with example implementations can be found on the functions page.Pages = [\"Functions.md\"]\nDepth = 2"
 },
