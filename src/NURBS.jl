@@ -25,20 +25,12 @@ function curvepoint(n, p, U, Pw, u)
         error("Nurbs.curvepoint: parametric point, u, is outside of knot range, U.")
     end
     span = getspanindex(n, p, u, U)
-    # println("span = ", span)
     N = basisfunctions(span+1, u, p, U)
     Cw = zeros(length(Pw[1,:]))
     for j = 0:p
-        # println("N[$j] = ", N[j+1])
-        # println("Pw[$(span-p+j)] = ", Pw[span-p+j+1, :])
-        # println("span = ", span)
-        # println("p = ", p)
-        # println("j = ", j)
-        # println("j+1 = ", j+1)
-        # println("span-p+j+1 = ", span-p+j+1)
         Cw .+= N[j+1]*Pw[span-p+j+1, :]
     end
-    # println(Cw)
+
     return Cw/Cw[end]
 end
 
@@ -59,12 +51,8 @@ function rationalcurvederivatives(Aders, wders, d)
     CK = zeros(d+1, length(Aders[1, :]))
     for k=0:d
         v = Aders[k+1, :]
-        # println("Aders[ `` k] = ", Aders[k+1, :])
         for i=1:k
             if k >= i
-                # println("binom = ", binomialcoeff(k, i))
-                # println("wders[ `` i] = ", wders[i+1])
-                # println("Ck[ `` (k-i)] = ", CK[k-i+1, :])
                 v -= binomialcoeff(k, i)*wders[i+1]*CK[k-i+1, :]
             end
         end
@@ -116,33 +104,30 @@ function curveknotinsertion(np, p, UP, Pw, u, k, s, r)
 
     #initialize output vectors
     UQ = zeros(length(UP)+r)
-    # println("UP, `` UP")
-    # println("UQ, `` UQ")
     Qw = zeros(nq+1, length(Pw[1, :]))
     Rw = zeros(p+1, length(Pw[1, :]))
     #Load new knot vector
     for i=0:k
         UQ[i+1] = UP[i+1]
-        # println("UQ `` i = ", UQ[i+1])
     end
-    # println("UQ, `` UQ")
+
     for i=1:r
         UQ[k+i+1] = u
-        # println("UQ `` (k+i) = ", UQ[k+i+1])
     end
-    # println("UQ, `` UQ")
+
     for i=k+1:mp
         UQ[i+1+r] = UP[i+1]
-        # println("UQ `` (i+r) = ", UQ[i+1+r])
     end
-    # println("UQ, `` UQ")
+
     #Save unaltered control points
     for i=0:k-p
         Qw[i+1, :] = Pw[i+1, :]
     end
+
     for i=k-s:np
         Qw[i+1+r, :] = Pw[i+1, :]
     end
+
     for i=0:p-s
         Rw[i+1, :] = Pw[k-p+i+1, :]
     end
@@ -155,15 +140,12 @@ function curveknotinsertion(np, p, UP, Pw, u, k, s, r)
             Rw[i+1, :] = alpha*Rw[i+1+1, :] + (1.0-alpha)*Rw[i+1, :]
         end
         Qw[L+1, :] = Rw[0+1, :]
-        # println("Qw `` L = ", Qw[L+1, :])
         Qw[k+r-j-s+1, :] = Rw[p-j-s+1, :]
-        # println("Qw `` (k+r-j-s) = ", Qw[k+r-j-s+1, :])
     end
     #Load remaining control points
     for i=L+1:k-s
         Qw[i+1, :] = Rw[i+1-L, :]
     end
-
 
     return nq, UQ, Qw
 end
@@ -181,52 +163,48 @@ Inputs:
 - U : the knot vector before insertion
 - Pw : the set of weighted control points and weights before insertion
 - X : elements, in ascending order, to be inserted into U (elements should be repeated according to their multiplicities, e.g., if x and y have multiplicites 2 and 3, X = [x,x,y,y,y])
-- r : length of X vector
+- r : length of X vector - 1
 
 Outputs:
 - Ubar : the knot vector after insertion
 - Qw : the set of weighted control points and weights after insertion
 """
 function refineknotvectorcurve(n, p, U, Pw, X, r)
+
     m = n+p+1
     a = getspanindex(n,p,X[0+1],U)
-    # println("a = ",a)
     b = getspanindex(n,p,X[r+1],U)
     b += 1
-    # println("b = ",b)
     Qw = zeros(length(Pw[:,1])+r+1,length(Pw[1,:]))
     Ubar = zeros(length(U)+r+1)
     for j=0:a-p
         Qw[j+1,:] = Pw[j+1,:]
     end
+
     for j=b-1:n
-        # println(j+r+1+1)
         Qw[j+r+1+1,:] = Pw[j+1,:]
     end
+
     for j=0:a
         Ubar[j+1] = U[j+1]
-        # println("Ubar[ `` j] = ", U[j+1])
     end
+
     for j=b+p:m
         Ubar[j+r+1+1] = U[j+1]
-        # println("Ubar[ `` (j+r+1)] = ", U[j+1])
     end
     i = b+p-1
     k = b+p+r
     # if r < 0
         for j=r:-1:0
-            # println("r = ",r)
             while X[j+1]<=U[i+1] && i>a
                 Qw[k-p-1+1,:] = Pw[i-p-1+1,:]
                 Ubar[k+1] = U[i+1]
-                # println("Ubar[ `` k] = ", U[i+1])
                 k -=1
                 i -=1
             end
             Qw[k-p-1+1,:] = Qw[k-p+1,:]
             for ell=1:p
                 ind = k-p+ell
-                # println("ind = ", ind)
                 alpha = Ubar[k+ell+1] - X[j+1]
                 if abs(alpha)==0.0
                     Qw[ind-1+1,:] = Qw[ind+1,:]
@@ -236,7 +214,6 @@ function refineknotvectorcurve(n, p, U, Pw, X, r)
                 end
             end
             Ubar[k+1] = X[j+1]
-            # println("Ubar[ `` k] = ", X[j+1])
             k -= 1
         end
     # end
@@ -684,25 +661,15 @@ Inputs:
 """
 function nurbsbasis(u,p,d,U,w)
     #get the span index
-    # println("gettin index")
-    # println("d = ", d)
-    # println("p = ", p)
-    # println("u = ", u)
-    # println("U = ", U)
     n = length(U)-1-p
     i = getspanindex(n, p, u, U)
-    # println("i = ", i)
-    #!this may not be right, make sure that these weights are right (doesn't matter if weights are always 1, but they may not be)
-    weights = w[i:i+p]
-    # println("weights = ", w)
+
     #get B-Spline basis functions and derivatives for numerator
     bases = Splines.basisfunctionsderivatives(i+1,u,p,d,U)
-    # println("my bases: ", bases)
     #separate out the bases and their derivatives
     N = bases[1,:]
-    # println("N: ", N)
     dN = bases[2,:] #only doing first derivates right now
-    # println("dN: ", dN)
+
     #number of non-zero basis functions at parametric point, u.
     numbasisfunctions = length(N)
     Nw = 0
@@ -710,20 +677,18 @@ function nurbsbasis(u,p,d,U,w)
 
     #calculate the denomenator values
     for j=1:numbasisfunctions
-        Nw += N[j] .* weights[j]
-        dNw += dN[j] .* weights[j]
+        Nw += N[j] .* w[j]
+        dNw += dN[j] .* w[j]
     end
-    # println("Nw = ", Nw)
-    # println("dNw = ", dNw)
+
     #Calculate each of the non-zero Rational Basis functions and first derivatives
     R = zeros(length(N))
     dR = zeros(size(N))
     for j=1:numbasisfunctions
-        R[j] = N[j]/Nw .* weights[j]
-        dR[j] = weights[j] .* (Nw*dN[j] - dNw*N[j]) ./ Nw^2
+        R[j] = N[j]/Nw .* w[j]
+        dR[j] = w[j] .* (Nw*dN[j] - dNw*N[j]) ./ Nw^2
     end
-    # println("R = ", R)
-    # println("dR = ", dR)
 
     return R, dR
 end
+
