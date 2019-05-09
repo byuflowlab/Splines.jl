@@ -13,7 +13,7 @@ Note that this package has been created primarily for research purposes, so only
 
 
 
-## Functions
+## Links to Function Descriptions
 Descriptions of available methods along with example implementations can be found on the functions page.
 
 ```@contents
