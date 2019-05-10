@@ -508,7 +508,6 @@ function leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=-1, I=[], Wd=[]; knotplacemen
         U[m+1-p:m+1] .= 1
         for j=2:n+1-p
             i = Int(floor(j*d))
-            println("i: ", i)
             alpha = j*d-i
             U[j+p] = (1-alpha)*ubar[i-1] + alpha*ubar[i]
         end
