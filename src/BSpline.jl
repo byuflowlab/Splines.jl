@@ -68,6 +68,64 @@ function basisfunctions(i, u, p, U)
     return N
 end
 
+
+"""
+    singlebasisfunction(p,m,U,i,u)
+
+Compute single basis function N_i^p. (NURBS A2.4)
+
+Inputs:
+- p : the basis degree up to the the curve order
+- m : there are m+1 knots in U
+- U : the knot vector
+- i : the index of the basis (the i in N_i)
+- u : parametric point of interest
+
+Outputs:
+- Nip: the N_i^p basis function value
+"""
+function singlebasisfunction(p,m,U,i,u)
+    if ( i==1 && u == U[1] ) || ( i == m-p-1+1 && u == U[m+1] )  #special case
+        return 1.0
+    end
+
+    if ( u < U[i] ) || ( u >= U[i+p+1] ) #local property
+        return 0.0
+    end
+
+    N = zeros(p+1)
+    for j=1:p+1 #initialize zeroth-degree functions
+        if u>=U[i+j] && u < U[i+j+1]
+            N[j] = 1.0
+        else
+            N[j] = 0.0
+        end
+    end
+
+    for k=1:p #compute triangular table.
+        if N[1]==0
+            saved = 0.0
+        else
+            saved = ((u-U[i])*N[1])/(U[i+k]-U[i])
+        end
+
+        for j=1:p-k+1
+            Uleft = U[i+j+1]
+            Uright = U[i+j+k+1]
+            if N[j+1]==0.0
+                N[j] = saved
+                saved = 0.0
+            else
+                temp = N[j+1]/(Uright-Uleft)
+                N[j] = saved+(Uright-u)*temp
+                saved = (u-Uleft)*temp
+            end #if
+        end #for
+    end #for
+
+    return N[1]
+end
+
 """
     basisfunctionsderivatives(i, u, p, n, U)
 
