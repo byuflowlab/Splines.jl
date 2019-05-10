@@ -577,9 +577,6 @@ function leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=-1, I=[], Wd=[]; knotplacemen
 
     end #for dimension
 
-
-
-
     return U, P
 
 end

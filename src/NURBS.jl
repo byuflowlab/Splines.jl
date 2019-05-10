@@ -221,19 +221,57 @@ function refineknotvectorcurve(n, p, U, Pw, X, r)
     return Ubar, Qw
 end
 
+# """
+# """
+# function distance4D(p1,p2)
+
+#     return LinearAlgebra.norm(p2-p1)
+
+# end
 
 # """
+#     removecurveknot!(n,p,U,Pw,u,r,s,num;d)
+
+# Remove knot u, num number of times (if possible). (NURBS A5.8)
+# Inputs:
+
+# - n :
+# - p :
+# - U :
+# - Pw :
+# - u :
+# - r :
+# - s :
+# - num :
+# - d : bound on deviation
+
+# Outputs:
+# - t : number of times the knot was removed
+# - U : new knot vector
+# - Pw : new control points
 # """
-# function removecurveknot(n,p,U,Pw,u,r,s,num)
+# function removecurveknot!(n,p,U,Pw,u,r,s,num; d=1e-6)
+#     maxP = 0.0
+#     minw = 999.9
+#     for i=1:length(Pw[:,1])
+#         Pdist = LinearAlgebra.norm(Pw[i,1:end-1])
+#         if Pdist > maxP
+#             maxP = Pdist
+#         end
+#         if Pw[i,end] < minw
+#             minw = Pw[i,end]
+#         end
+#     end
+#     tol = d*minw/maxP
 #     m = n+p+1
 #     ord = p+1
 #     fout = (2*r-s-p)/2 #first control point output
 #     last = r-s
 #     first = r-p
-#     for t = 0:num
+#     for t = 1:num+1
 #         #this loop is eqn 5.28
 #         off = first-1 #diff in index between temp and P
-#         temp[0] = P2[off]
+#         temp[1] = P2[off]
 #         temp[last+1-off] = Pw[last+1]
 #         i = first
 #         j = last
@@ -252,12 +290,12 @@ end
 #             jj -= 1
 #         end #while
 #         if j-i <t #check if knot is removable
-#             if distance4D(temp[ii-1],temp[jj-1]) < tol
+#             if LinearAlgebra.norm(temp[ii-1]-temp[jj-1]) <= tol
 #                 remflag = 1
 #             end
 #         else
 #             alfi = (u-U[i])/(U[i+ord+t]-U[i])
-#             if distance4D(Pw[i],alfi*temp[ii+t+1]+(1.0-alfi)*temp[ii-1]) <= tol
+#             if LinearAlgebra.norm(Pw[i]-(alfi*temp[ii+t+1]+(1.0-alfi)*temp[ii-1])) <= tol
 #                 remflag = 1
 #             end
 #         end
@@ -278,7 +316,7 @@ end
 #         last += 1
 #     end #for
 #     if t==0
-#         return
+#         return t, U, Pw
 #     end
 #     for k = r+1:m
 #         U[k-t] = U[k] #shift knots
@@ -295,7 +333,7 @@ end
 #             Pw[j] = Pw[k]
 #             j += 1
 #         end
-#         return
+#         return t, U, Pw
 #     end
 # end
 
