@@ -637,3 +637,164 @@ function leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=-1, I=[], Wd=[]; knotplacemen
     return U, P
 
 end
+
+"""
+    getremovalboundcurve(n,p,U,P,u,r,s)
+
+Compute the knot removal error bounds, \$B_r\$. (NURBS A9.8)
+
+Inputs:
+- n : there are n+1 control points
+- p : curve degree
+- U : knot vector
+- P : control points
+- u : internal knot
+- r : index of u in U (assuming zero indexing)
+- s : multiplicity of u
+
+Outputs:
+- Br : distances
+"""
+function getremovalboundcurve(n,p,U,P,u,r,s)
+    println("knot: ",r)
+    ord = p+1
+    println("ord: ", ord)
+    last = r-s +1
+    println("last: ", last)
+    first = r-p +1
+    println("first: ", first)
+    off = first-1 #difference in index between temp and P.
+    println("off: ", off)
+    temp = zeros(size(P))
+    println("P[off,:]: ", P[off,:])
+    temp[1,:] = P[off,:]
+    println("P[last+1,:]: ", P[last+1,:])
+    temp[last+1-off,:] = P[last+1,:]
+    i = first
+    j = last
+    ii = 1 +1
+    jj = last-off +1
+    while j-i > 0
+        #compute new control points for one removal step
+        alfi = (u-U[i])/(U[i+ord]-U[i])
+        alfj = (u-U[j])/(U[j+ord]-U[j])
+        temp[ii] = (P[i]-(1-alfi)*temp[ii-1])/alfi
+        temp[jj] = (P[j]-alfj*temp[jj+1])/(1-alfj)
+        i += 1
+        ii += 1
+        j -= 1
+        jj -= 1
+    end #while j-1>0
+
+    if j-i < 0 #now get bound
+        Br = LinearAlgebra.norm(temp[ii-1]-temp[jj+1]) #eqn 9.82
+    else
+        alfi = (u-U[i])/(U[i+ord]-U[i])
+        Br = LinearAlgebra.norm( P[i] - (alfi*temp[ii+1]+(1-alfi)*temp[ii-1]) ) #eqn 9.80
+    end
+
+    return Br
+end
+
+"""
+    removeknotsboundcurve(n,p,U,P,ub,ek,E)
+
+Remove knots from bounded curve. (NURBS A9.9)
+
+Inputs:
+- n : there are n+1 control points
+- p : curve degree
+- U : knot vector
+- P : control points
+- u : internal knot
+- ub : knot to remove?
+- ek : accumulated error?
+- E : max allowable error
+
+Outputs:
+- ek : accumulated error
+- nh : new n
+- Uh : new U
+- Ph : new P
+"""
+function removeknotsboundcurve(n,p,U,P,ub,ek,E)
+    m = length(U)-1
+    #get unique knots and their mulitplicities as well as index of first instance of unique knots.
+    uniqueknot = unique(U)
+    multiplicity = [(count(U->U==i,U)) for i in uniqueknot]
+    multiplicity = multiplicity[2:end-1]
+
+    #get Br values for all distinct interior knots
+    Br = zeros(length(uniqueknot)-2)
+    firstidx = zeros(Int,length(Br))
+    for i=1:length(uniqueknot)-2
+        firstidx[i] = (LinearIndices(U))[findall(U->U==uniqueknot[i+1],U)][1]
+        Br[i] = getremovalboundcurve(n,p,U,P,uniqueknot[i+1],firstidx[i]-1,multiplicity[i+1])
+    end
+
+    #for each basis function, get range of parameter indices.
+    basisindices = zeros(length(P[:,1]),p+2)
+    for i=1:length(P[:,1])
+        basisindices[i,:] = collect(i:p+i+1)
+    end
+
+    while true
+        #find knot with smallest Br bound
+        minBr, minidx = findmin(Br)
+        #set r and s
+        s = multiplicity[minidx]
+        r = firstidx[minidx]
+
+        if minBr==Inf
+            break
+        end
+        #using eqns 9.81 and 9.83 and A2.4, compute NewError[k], form temp[k] = ek[k] + NewError[k] at all ub[k] values falling within the relevant domain
+        temp = zeros(size(ek))
+        for i=1:length(ub)
+            if ub[i] >= U[r]-Br[minidx] && ub[i] <= U[r]+Br[minidx]
+                N = singlebasisfunction(p,m,U,i,u)
+                if mod(p+s,2) == 0
+                    k = (p+s)/2
+                    Newerror = N*minBr
+                else
+                    k=(p+s+1)/2
+                    alpha = (U[r] - U[r-k+1])/(U[r-k+p+2] - U[r-k+1])
+                    Newerror = (1-alpha)*N*minBr
+                end
+                temp[k] = ek[k] + NewError
+            else
+
+            end
+        end
+
+        #if knot is removable (all temp[k] <= E)
+        if all(temp .<= E)
+            #update ek for relevant range
+            for i=1:length(ub)
+                if ub[i] >= U[r]-Br[minidx] && ub[i] <= U[r]+Br[minidx]
+                    ek[k] = temp[k]
+                else
+                end
+            end
+
+            #remove knot (A5.8 without tolerance check)
+            Pw = [P ones(length(P[:,1]))]
+            t, U, Pw = removecurveknot(n,p,U,Pw,U[r],r,s,num,tolcheck=false)
+
+            #if no more knots, break
+            if length(U) == 2*(p+1)
+                break
+            end
+
+            #using Eqn 9.84, compute new index ranges for affected basis functions
+
+            #using Eqn 9.85 compute new error bounds for the relevant knots
+
+        else
+            #set this Br to Inf
+            Br[minidx] = Inf
+        end
+    end
+
+    return ek,nh,Uh,Ph
+end
