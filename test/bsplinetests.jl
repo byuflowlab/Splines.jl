@@ -80,3 +80,38 @@ end #Basis Functions Tests
     @test cprime[2,:,5] == cp[5,1]
     @test cprime[2,:,6] == cp[6,1]
 end
+
+@testset "B-Spline: Interpolation Tests" begin
+    Q = [0 0; 3 4; -1 4; -4 0; -4 -3]
+    numdata, ~ = size(Q)
+    n= 4
+    p = 3
+    U = reshape([0 0 0 0 28/51 1 1 1 1],1,9)
+    ubar = [5/17 9/17 14/17]
+    N = zeros(3,4)
+    for i=1:3
+        span = Splines.getspanindex(n,p,ubar[i],U)
+        N[i,:] = Splines.basisfunctions(span+1, ubar[i], p, U)
+    end
+    A = zeros(5,5)
+    A[1,1] = 1
+    A[5,5] = 1
+    for i = 2:3
+        for j = 1:4
+            A[i,j]=N[i-1,j]
+        end
+    end
+    for i=2:5
+        A[4,i]=N[3,i-1]
+    end
+    P = inv(A)*Q
+    m = length(U)
+
+    m=8
+
+    mprime, Uprime, Pprime =Splines.globalcurveinterpolation(n,Q,2,p;knotplacement="chordlength")
+    Uprime = reshape(Uprime,1,9)
+    @test mprime == m
+    @test isapprox(Uprime,U,atol=1e-5)
+    @test isapprox(Pprime,P,atol=1e-5)
+end
