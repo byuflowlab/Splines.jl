@@ -221,121 +221,163 @@ function refineknotvectorcurve(n, p, U, Pw, X, r)
     return Ubar, Qw
 end
 
-# """
-# """
-# function distance4D(p1,p2)
+"""
+    removecurveknot(n,p,U,Pw,u,r,s,num;d,tolcheck)
 
-#     return LinearAlgebra.norm(p2-p1)
+Remove knot u, num number of times (if possible). (NURBS A5.8)
+Inputs:
 
-# end
+- n : there are n+1 control points
+- p : degree of curve
+- U : knot vector
+- Pw : weighted control points
+- u : knot to be removed
+- r : index of first repetition of knot in U
+- s : multiplicity of u in U
+- num : the number of times desired to remove knot.
+- d : bound on deviation
+- tolcheck: boolean for whether to do tolerance check (we don't do check when this function is being called by the curve fitting algorithm)
 
-# """
-#     removecurveknot!(n,p,U,Pw,u,r,s,num;d)
+Outputs:
+- t : number of times the knot was actually removed
+- Uhat : new knot vector
+- Phat : new control points
+"""
+function removecurveknot(n,p,U,Pw,u,r,s,num; d=1e-6, tolcheck=true)
 
-# Remove knot u, num number of times (if possible). (NURBS A5.8)
-# Inputs:
+    Phat = copy(Pw)
+    Uhat = copy(U)
 
-# - n :
-# - p :
-# - U :
-# - Pw :
-# - u :
-# - r :
-# - s :
-# - num :
-# - d : bound on deviation
+    local maxP, minw, i, j, t
+    maxP = 0.0
+    minw = 999.9
+    for i=1:length(Phat[:,1])
+        Pdist = LinearAlgebra.norm(Phat[i,1:end-1])
+        if Pdist > maxP
+            maxP = Pdist
+        end
+        if Phat[i,end] < minw
+            minw = Phat[i,end]
+        end
+    end
+    # println("minw = ", minw)
+    # println("maxP = ", maxP)
+    tol = d*minw/(1+maxP)
+    # println("tol = ", tol)
+    m = n+p+1
+    # println("m = ", m)
+    ord = p+1
+    # println("ord = ", ord)
+    fout = Int(round((2*r-s-p)/2)) #first control point output
+    # println("fout = ", fout)
+    last = r-s+1
+    # println("last = ", last)
+    first = r-p+1
+    # println("first = ", first)
 
-# Outputs:
-# - t : number of times the knot was removed
-# - U : new knot vector
-# - Pw : new control points
-# """
-# function removecurveknot!(n,p,U,Pw,u,r,s,num; d=1e-6)
-#     maxP = 0.0
-#     minw = 999.9
-#     for i=1:length(Pw[:,1])
-#         Pdist = LinearAlgebra.norm(Pw[i,1:end-1])
-#         if Pdist > maxP
-#             maxP = Pdist
-#         end
-#         if Pw[i,end] < minw
-#             minw = Pw[i,end]
-#         end
-#     end
-#     tol = d*minw/maxP
-#     m = n+p+1
-#     ord = p+1
-#     fout = (2*r-s-p)/2 #first control point output
-#     last = r-s
-#     first = r-p
-#     for t = 1:num+1
-#         #this loop is eqn 5.28
-#         off = first-1 #diff in index between temp and P
-#         temp[1] = P2[off]
-#         temp[last+1-off] = Pw[last+1]
-#         i = first
-#         j = last
-#         ii = 1
-#         jj = last-off
-#         remflag = 0
-#         while j-i>t
-#             #compute new control points for one removal step
-#             alfi = (u-U[i])/(U[i+ord+t]-U[i])
-#             alfj = (u-U[j-t])/(U[j+ord]-U[j-t])
-#             temp[ii] = (Pw[i] - (1.0-alfi)*temp[ii-1])/alfi
-#             temp[jj] = (Pw[j]-alfj*temp[jj+1])/(1.0-alfj)
-#             i += 1
-#             ii += 1
-#             j -= 1
-#             jj -= 1
-#         end #while
-#         if j-i <t #check if knot is removable
-#             if LinearAlgebra.norm(temp[ii-1]-temp[jj-1]) <= tol
-#                 remflag = 1
-#             end
-#         else
-#             alfi = (u-U[i])/(U[i+ord+t]-U[i])
-#             if LinearAlgebra.norm(Pw[i]-(alfi*temp[ii+t+1]+(1.0-alfi)*temp[ii-1])) <= tol
-#                 remflag = 1
-#             end
-#         end
-#         if remflag == 0 #cannot remove any more knots
-#             break #get out of for loop
-#         else
-#             #successful removal. save new cont pts
-#             i = first
-#             j = last
-#             while j-1 > t
-#                 Pw[i] = temp[i-off]
-#                 Pw[j] = temp[j-off]
-#                 i += 1
-#                 j -= 1
-#             end #while
-#         end #if
-#         first -= 1
-#         last += 1
-#     end #for
-#     if t==0
-#         return t, U, Pw
-#     end
-#     for k = r+1:m
-#         U[k-t] = U[k] #shift knots
-#         j = fout
-#         i = j #Pj through Pi will be overwritten
-#         for k=1:t-1
-#             if mod(k,2) == 1 #k modulo 2
-#                 i += 1
-#             else
-#                 j -= 1
-#             end
-#         end
-#         for k=i+1:n #shift
-#             Pw[j] = Pw[k]
-#             j += 1
-#         end
-#         return t, U, Pw
-#     end
-# end
+    #this loop is eqn 5.28
+    temp=zeros(size(Phat))
+    remflag = false
+    for outer t = 0:num
+        # println("t = ", t)
+        off = first-1 #diff in index between temp and P
+        # println("off = ", off)
+        temp[1,:] = Phat[off,:]
+        # println("temp[1,:] = ", temp[1,:])
+        temp[last+1-off,:] = Phat[last+1,:]
+        # println("temp[$(last+1-off),:] = ", temp[last+1-off])
+        i = first
+        # println("i = ", i)
+        j = last
+        # println("j = ", j)
+        ii = 1+1
+        # println("ii = ", ii)
+        jj = last-off+1
+        # println("jj = ", jj)
+        remflag = false
+
+        while j-i>t
+            # println("j-i>t")
+            #compute new control points for one removal step
+            alfi = (u-Uhat[i])/(Uhat[i+ord+t]-Uhat[i])
+            # println("alfi = ", alfi)
+            alfj = (u-Uhat[j-t])/(Uhat[j+ord]-Uhat[j-t])
+            # println("alfj = ", alfj)
+            temp[ii,:] = (Phat[i,:] - (1.0-alfi)*temp[ii-1,:])/alfi
+            # println("temp[ii,:] = ", temp[ii,:])
+            temp[jj,:] = (Phat[j,:]-alfj*temp[jj+1,:])/(1.0-alfj)
+            # println("temp[jj,:] = ", temp[jj,:])
+            i += 1
+            # println("i = ", i)
+            ii += 1
+            # println("ii = ", ii)
+            j -= 1
+            # println("j = ", j)
+            jj -= 1
+            # println("jj = ", jj)
+        end #while
+        if j-i < t #check if knot is removable
+            # println("j-i < t")
+            if LinearAlgebra.norm(temp[ii-1,:]-temp[jj+1,:]) <= tol || tolcheck==false
+                remflag = true
+            end
+        else
+            alfi = (u-Uhat[i])/(Uhat[i+ord+t]-Uhat[i])
+            # println("alfi = ", alfi)
+            if LinearAlgebra.norm(Phat[i,:]-(alfi*temp[ii+t+1,:]+(1.0-alfi)*temp[ii-1,:])) <= tol || tolcheck==false
+                remflag = true
+            end
+        end
+        # println(remflag)
+        if remflag == false #cannot remove any more knots
+            break #get out of for loop
+        else
+            #successful removal. save new cont. pts
+            i = first
+            # println("i = ", i)
+            j = last
+            # println("j = ", j)
+            while j-i > t
+                # println("j-i > t")
+                Phat[i,:] = temp[i-off,:]
+                Phat[j,:] = temp[j-off,:]
+                i += 1
+                j -= 1
+            end #while
+        end #if
+        first -= 1
+        last += 1
+    end #for
+
+    #if no knots removed, end
+    if remflag==false
+        # println("No Knots Removed.")
+        return 0, Uhat, Phat
+    end
+
+    #shift knots
+    for k = r+1:m
+        Uhat[k-t] = Uhat[k]
+        j = fout
+        i = j #Pj through Pi will be overwritten
+        for k=1:t
+            if mod(k,2) == 1 #k modulo 2
+                i += 1
+            else
+                j -= 1
+            end
+        end
+    end
+
+    #shift
+    for k=i+1:n
+        Phat[j,:] = Phat[k,:]
+        j += 1
+    end
+
+    return t, Uhat, Phat
+
+end
 
 
 """
