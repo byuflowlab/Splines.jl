@@ -375,7 +375,7 @@ Inputs:
 - knotplacement : the knot placement scheme; either chordlength (common, uniform parameterization) or centripetal (good for data that takes sharp turns).
 
 Outputs:
-- m : number of knots
+- m : number of knots-1
 - U : knot vector
 - P : control points
 """
