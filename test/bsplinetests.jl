@@ -83,10 +83,9 @@ end
 
 @testset "B-Spline: Interpolation Tests" begin
     Q = [0 0; 3 4; -1 4; -4 0; -4 -3]
-    numdata, ~ = size(Q)
     n= 4
     p = 3
-    U = reshape([0 0 0 0 28/51 1 1 1 1],1,9)
+    U = [0 0 0 0 28/51 1 1 1 1]
     ubar = [5/17 9/17 14/17]
     N = zeros(3,4)
     for i=1:3
@@ -105,9 +104,7 @@ end
         A[4,i]=N[3,i-1]
     end
     P = inv(A)*Q
-    m = length(U)
-
-    m=8
+    m = length(U)-1
 
     mprime, Uprime, Pprime =Splines.globalcurveinterpolation(n,Q,2,p;knotplacement="chordlength")
     Uprime = reshape(Uprime,1,9)
