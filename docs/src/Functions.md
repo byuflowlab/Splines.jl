@@ -172,6 +172,18 @@ r2 = n
 cprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
 ```
 
+```@docs
+Splines.globalcurveinterpolation(n,Q,r,p; knotplacement)
+```
+**Example**
+```@example
+Q = [0 0; 3 4; -1 4; -4 0; -4 -3]
+r = 2
+n= 4
+p = 3
+U = [0 0 0 0 28/51 1 1 1 1]
+m, U, P =Splines.globalcurveinterpolation(n,Q,r,p;knotplacement="chordlength")
+```
 
 
 
