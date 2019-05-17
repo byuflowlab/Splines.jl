@@ -109,6 +109,6 @@ end
     mprime, Uprime, Pprime = Splines.globalcurveinterpolation(n,Q,2,p,knotplacement="chordlength")
     Uprime = reshape(Uprime,1,9)
     @test mprime == m
-    @test isapprox(Uprime,U,atol=1e-5)
-    @test isapprox(Pprime,P,atol=1e-5)
+    @test isapprox(Uprime,U,atol=1e-6)
+    @test isapprox(Pprime,P,atol=1e-6)
 end
