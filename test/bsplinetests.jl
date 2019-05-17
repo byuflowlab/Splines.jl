@@ -83,7 +83,7 @@ end
 
 @testset "B-Spline: Interpolation Tests" begin
     Q = [0 0; 3 4; -1 4; -4 0; -4 -3]
-    n= 4
+    n = 4
     p = 3
     U = [0 0 0 0 28/51 1 1 1 1]
     ubar = [5/17 9/17 14/17]
@@ -97,16 +97,16 @@ end
     A[5,5] = 1
     for i = 2:3
         for j = 1:4
-            A[i,j]=N[i-1,j]
+            A[i,j] = N[i-1,j]
         end
     end
     for i=2:5
-        A[4,i]=N[3,i-1]
+        A[4,i] = N[3,i-1]
     end
     P = inv(A)*Q
     m = length(U)-1
 
-    mprime, Uprime, Pprime =Splines.globalcurveinterpolation(n,Q,2,p;knotplacement="chordlength")
+    mprime, Uprime, Pprime = Splines.globalcurveinterpolation(n,Q,2,p,knotplacement="chordlength")
     Uprime = reshape(Uprime,1,9)
     @test mprime == m
     @test isapprox(Uprime,U,atol=1e-5)
