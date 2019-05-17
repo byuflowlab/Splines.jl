@@ -363,6 +363,17 @@ end
 #There is another curvederivatives algorithm in the book (Algorithm 3.4)
 
 """
+    computeubar(r,Q,knotplacement)
+
+Compute ubar from points, Q, given knotplacement scheme.
+
+Inputs:
+- r : there are r+1 datapoints
+- Q : array of data points
+- knotplacement : type of placement, centripetal or chordlength
+
+Outputs:
+- ubar : well distributed parametric points.
 """
 function computeubar(r,Q,knotplacement)
     ubar = zeros(r+1)
@@ -419,7 +430,7 @@ function globalcurveinterpolation(n,Q,r,p; knotplacement="centripetal")
     m = n+p+1
 
     ##-- Get knot vector
-    ubar = computeubar(r,Q,knotplacement)
+    ubar = computeubar(length(Q[:,1])-1,Q,knotplacement)
     U = zeros(m+1)
     P = zeros(n+1,r)
 
@@ -436,6 +447,7 @@ function globalcurveinterpolation(n,Q,r,p; knotplacement="centripetal")
         #from \bar{u}_k get the knot vector
         U[1:p+1] .= 0
         U[m+1-p:m+1] .= 1
+        println("ubar: ", ubar)
         for i=2:n+1-p
             U[i+p] = sum(ubar[i:i+p-1])/p
         end
@@ -464,7 +476,7 @@ Compute the weighted, constrained, least squares curve fit. (NURBS A9.6)
 Inputs:
 
 - Q : Data points to be approximated
-- r : number of datapoints.
+- r : there are r+1 datapoints.
 - Wq : weights of "tightness" of approximation to each data point (values greater than zero indicate unconstrained, values less than zero indicat constraint.)
 - D : optional derivatives at any of the points, Q
 - s : number of derivatives in D is s+1
@@ -978,7 +990,7 @@ end
 Compute global curve approximation of datapoints within bound, E.
 
 Inputs:
-- m : number of data points to approximate
+- m : there are m+1 data points to approximate
 - Q : data points to approximate
 - p : degree of approximating curve
 - E : maximum error allowance for approximating curve
