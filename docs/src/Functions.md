@@ -177,12 +177,13 @@ Splines.globalcurveinterpolation(n,Q,r,p; knotplacement)
 ```
 **Example**
 ```@example
+import Splines # hide
 Q = [0 0; 3 4; -1 4; -4 0; -4 -3]
 r = 2
-n= 4
+n = 4
 p = 3
 U = [0 0 0 0 28/51 1 1 1 1]
-m, U, P =Splines.globalcurveinterpolation(n,Q,r,p;knotplacement="chordlength")
+m, U, P = Splines.globalcurveinterpolation(n,Q,r,p;knotplacement="chordlength")
 ```
 
 
