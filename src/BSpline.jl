@@ -19,7 +19,13 @@ function getspanindex(n, p, u, U)
             else
                 lo = mid
             end #if low
+            # println("lo: ", lo)
+            # println("hi: ", hi)
             mid = div((lo+hi), 2)
+            # println("mid: ", mid)
+            if U[mid]==U[mid+1] && abs(lo-hi)==1
+                break
+            end
         end #while not found
         # println("Returning Span Index")
         return mid-1
@@ -362,6 +368,8 @@ end
 
 #There is another curvederivatives algorithm in the book (Algorithm 3.4)
 
+
+
 """
     computeubar(r,Q,knotplacement)
 
@@ -401,13 +409,12 @@ function computeubar(r,Q,knotplacement)
         end
 
     else
-        ubar = collect(range(0,stop=1,length=n+1))
+        ubar = collect(range(0,stop=1,length=r+1))
     end
 
     return ubar
 
 end
-
 
 """
     globalcurveinterpolation(n,Q,r,p; knotplacement)
@@ -447,7 +454,7 @@ function globalcurveinterpolation(n,Q,r,p; knotplacement="centripetal")
         #from \bar{u}_k get the knot vector
         U[1:p+1] .= 0
         U[m+1-p:m+1] .= 1
-        println("ubar: ", ubar)
+        # println("ubar: ", ubar)
         for i=2:n+1-p
             U[i+p] = sum(ubar[i:i+p-1])/p
         end
@@ -468,590 +475,601 @@ function globalcurveinterpolation(n,Q,r,p; knotplacement="centripetal")
 end
 
 
-"""
-    leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=[], I=[], Wd=[]; knotplacement)
-
-Compute the weighted, constrained, least squares curve fit. (NURBS A9.6)
-
-Inputs:
-
-- Q : Data points to be approximated
-- r : there are r+1 datapoints.
-- Wq : weights of "tightness" of approximation to each data point (values greater than zero indicate unconstrained, values less than zero indicat constraint.)
-- D : optional derivatives at any of the points, Q
-- s : number of derivatives in D is s+1
-- I : Maps the derivatives in D to the corresponding points in Q
-- Wd : weights associated with derivatives. Values greater than zero indicate
-unconstrained, values less than zero indicate constraint
-- n : n+1 control points are used for the fit.
-- p : the degree of the curve to fit.
-- knotplacement : knot placement scheme ("centripital" or "chordlength")
-
-Outputs:
-
-- U : knot vector
-- P : control points
-"""
-function leastsquarescurve(Q,r,n,p,ubar=[],U=[], Wq=[], D=[], s=-1, I=[], Wd=[]; knotplacement="centripetal")
-
-    #initialize output
-    m = n+p+1
-    P = zeros(n+1,length(Q[1,:]))
-
-    #do some setting up of weights based on inputs.
-    if isempty(Wq)
-        Wq = ones(length(Q[:,1]))
-        ru = length(Q[:,1]) - 1
-        rc = -1
-    else
-        ru = -1
-        rc = -1
-        for i=1:r+1
-            if Wq[i] > 0.0
-                ru += 1
-            else
-                rc += 1
-            end
-        end
-    end
-
-    if isempty(Wd)
-        Wd = ones(length(Q[:,1]))
-        I = -ones(length(Q[:,1]))
-        su = length(Q[:,1])-1
-        sc = -1
-    else
-        su = -1
-        sc = -1
-        for i=1:s+1
-            if Wq[i] > 0.0
-                su += 1
-            else
-                sc += 1
-            end
-        end
-    end
-
-    mu = ru+su+1
-    mc = rc+sc+1
-
-    if mc >= n || mc+n >= mu+1
-        error("That's not going to work. (see NURBS eqn 9.70)")
-    else
-        #initialize all the local matrices
-        N = zeros(mu+1,n+1)
-        M = zeros(mc+1,n+1)
-        S = zeros(mu+1)
-        T = zeros(mc+1)
-        A = zeros(mc+1)
-        W = zeros(mu+1,mu+1)
-    end
-
-    ##-- set up knots
-    if isempty(U)
-        U = zeros(m+1)
-        ubar = computeubar(r,Q,knotplacement)
-
-        if knotplacement != "centripetal" && knotplacement != "chordlength" #eqn 9.3
-            warn("No valid knot placement scheme selected, using equidistant...")
-            U = collect(range(0,stop=1,length=m))
-        else
-            #from \bar{u}_k get the knot vector
-            d = (r+1)/(n-p+1)
-            #from \bar{u}_k get the knot vector
-            U[1:p+1] .= 0
-            U[m+1-p:m+1] .= 1
-            for j=2:n+1-p
-                i = Int(floor(j*d))
-                alpha = j*d-i
-                U[j+p] = (1-alpha)*ubar[i-1] + alpha*ubar[i]
-            end
-        end
-    end
-
-    ##-- Set up arrays: N, W, S, T, M
-
-    for k=1:length(Q[1,:]) #do each dimension separately.
-        j = 1
-        mu2 = 1
-        mc2 = 1
-        for i=1:r+1
-            span = Splines.getspanindex(n,p,ubar[i],U)
-            dflag = 0 #derivative flag
-            #check for derivative at point
-            if j <= s
-                if i == I[j]
-                    dflag = 1
-                end
-            end
-
-            if dflag == 0 #if derivative not present
-                funs = Splines.basisfunctions(span+1, ubar[i], p, U)
-            else
-                funs = Splines.basisfunctionsderivatives(span+1, ubar[i], p, 1, U)
-            end
-
-            #if point is unconstrained
-            if Wq[i] > 0
-                W[mu2,mu2] = Wq[i]
-                N[mu2,span+1-p:span+1] = funs
-                S[mu2] = W[mu2,mu2]*Q[i,k]
-                mu2 += 1
-            else #if point is constrained
-                M[mc2,span+1-p:span+1] = funs
-                T[mc2] = Q[i,k]
-                mc2 += 1
-            end #if unconstrained
-
-            #if derivative given for this point
-            if dflag == 1
-                if Wd[j] > 0 #unconstrained derivative
-                    W[mu2,mu2] = Wd[j]
-                    N[mu2,span+1-p:span+1] = funs[2,:]
-                    S[mu2] = W[mu2,mu2]*D[j]
-                    mu2 += 1
-                else #constrained derivative
-                    M[mc2,span+1-p:span+1] = funs[2,:]
-                    T[mc2] = D[j]
-                    mc2 += 1
-                end
-                j += 1
-            end #if dflag
-        end #for r
-
-        NtransWN = N'*W*N
-        NtransWNinv = LinearAlgebra.inv(NtransWN)
-        NtransWS = N'*W*S
-
-        if mc < 0 #if no constraints
-            P[:,k] = NtransWN\NtransWS
-        else
-            A = (M*NtransWNinv*M') \ (M*NtransWNinv*NtransWS-T)
-            P[:,k] = NtransWN \ (NtransWS - M'*A)
-        end
-
-    end #for dimension
-
-    return U, P
-
-end
-
-"""
-    getremovalboundcurve(n,p,U,P,u,r,s)
-
-Compute the knot removal error bounds, \$B_r\$. (NURBS A9.8)
-
-Inputs:
-- n : there are n+1 control points
-- p : curve degree
-- U : knot vector
-- P : control points
-- u : internal knot
-- r : index of u in U (assuming zero indexing)
-- s : multiplicity of u
-
-Outputs:
-- Br : distances
-"""
-function getremovalboundcurve(n,p,U,P,u,r,s)
-    println("knot: ",r)
-    ord = p+1
-    println("ord: ", ord)
-    last = r-s +1
-    println("last: ", last)
-    first = r-p +1
-    println("first: ", first)
-    off = first-1 #difference in index between temp and P.
-    println("off: ", off)
-    temp = zeros(size(P))
-    println("P[off,:]: ", P[off,:])
-    temp[1,:] = P[off,:]
-    println("P[last+1,:]: ", P[last+1,:])
-    temp[last+1-off,:] = P[last+1,:]
-    i = first
-    j = last
-    ii = 1 +1
-    jj = last-off +1
-    while j-i > 0
-        #compute new control points for one removal step
-        alfi = (u-U[i])/(U[i+ord]-U[i])
-        alfj = (u-U[j])/(U[j+ord]-U[j])
-        temp[ii] = (P[i]-(1-alfi)*temp[ii-1])/alfi
-        temp[jj] = (P[j]-alfj*temp[jj+1])/(1-alfj)
-        i += 1
-        ii += 1
-        j -= 1
-        jj -= 1
-    end #while j-1>0
-
-    if j-i < 0 #now get bound
-        Br = LinearAlgebra.norm(temp[ii-1]-temp[jj+1]) #eqn 9.82
-    else
-        alfi = (u-U[i])/(U[i+ord]-U[i])
-        Br = LinearAlgebra.norm( P[i] - (alfi*temp[ii+1]+(1-alfi)*temp[ii-1]) ) #eqn 9.80
-    end
-
-    return Br
-end
-
-"""
-    removeknotsboundcurve(n,p,U,P,ub,ek,E)
-
-Remove knots from bounded curve. (NURBS A9.9)
-
-Inputs:
-- n : there are n+1 control points
-- p : curve degree
-- U : knot vector
-- P : control points
-- u : internal knot
-- ub : knot to remove?
-- ek : accumulated error?
-- E : max allowable error
-
-Outputs:
-- ek : accumulated error
-- nh : new n
-- Uh : new U
-- Ph : new P
-"""
-function removeknotsboundcurve(n,p,U,P,ub,ek,E)
-
-    #get Br values for all distinct interior knots
-    Br = zeros(length(uniqueknot)-2)
-    for i=1:length(uniqueknot)-2
-        Br[i] = getremovalboundcurve(n,p,U,P,uniqueknot[i+1],firstidx[i]-1,multiplicity[i+1])
-    end
-
-    #for each basis function, get range of parameter indices.
-    basisindices = zeros(length(P[:,1]),p+2)
-    for i=1:length(P[:,1])
-        basisindices[i,:] = collect(i:p+i+1)
-    end
-
-    while true
-        m = length(U)-1
-
-        #find knot with smallest Br bound
-        minBr, minidx = findmin(Br)
-
-        #set r and s
-        #get unique knots and their mulitplicities
-        uniqueknot = unique(U)
-        multiplicity = [(count(U->U==i,U)) for i in uniqueknot]
-        multiplicity = multiplicity[2:end-1]
-        s = multiplicity[minidx]
-
-        firstidx = zeros(Int,length(Br))
-        for i=1:length(uniqueknot)-2
-            firstidx[i] = (LinearIndices(U))[findall(U->U==uniqueknot[i+1],U)][1]
-        end
-        r = firstidx[minidx]
-
-        if minBr==Inf
-            break #finished, you've done all the interior knots
-        end
-        #using eqns 9.81 and 9.83 and A2.4, compute NewError[k], form temp[k] = ek[k] + NewError[k] at all ub[k] values falling within the relevant domain
-        temp = zeros(size(ek))
-        for i=1:length(ub)
-            if ub[i] >= U[r]-Br[minidx] && ub[i] <= U[r]+Br[minidx]
-                N = singlebasisfunction(p,m,U,i,ub[i])
-                if mod(p+s,2) == 0
-                    k = Int((p+s)/2)
-                    Newerror = N*minBr
-                else
-                    k = Int((p+s+1)/2)
-                    alpha = (U[r] - U[r-k+1])/(U[r-k+p+2] - U[r-k+1])
-                    Newerror = (1-alpha)*N*minBr
-                end
-                temp[k] = ek[k] + NewError
-            end
-        end
-
-        #if knot is removable (all temp[k] <= E)
-        if all(temp .<= E)
-            #update ek for relevant range
-            for i=1:length(ub)
-                if ub[i] >= U[r]-Br[minidx] && ub[i] <= U[r]+Br[minidx]
-                    ek[k] = temp[k]
-                end
-            end
-
-            #remove knot (A5.8 without tolerance check)
-            Pw = [P ones(length(P[:,1]))]
-            t, U, Pw = removecurveknot(n,p,U,Pw,U[r],r,s,num,tolcheck=false)
-
-            #if no more knots, break
-            if length(U) == 2*(p+1)
-                break #no more knots to remove.
-            end
-
-            #using Eqn 9.84, compute new index ranges for affected basis functions
-            for i=r-p-1:r-s
-                basisindices[i,:] = collect(i:p+i+1)
-            end
-
-            #using Eqn 9.85 compute new error bounds for the relevant knots
-            for i=1:length(uniqueknot)-2
-                firstidx[i] = (LinearIndices(U))[findall(U->U==uniqueknot[i+1],U)][1]
-                if i < max(r-p,p+1) && i > min(r+p-s+1,n)
-                    Br[i] = getremovalboundcurve(n,p,U,P,uniqueknot[i+1],firstidx[i]-1,multiplicity[i+1])
-                end
-            end
-
-        else
-            #set this Br to Inf
-            Br[minidx] = Inf
-        end
-    end
-
-    return ek,nh,Uh,Ph
-end
-
-"""
-    f(u,Q,C,dC,ddC)
-
-Auxiliar function for point projection: Solves for f(u) and f'(u) used in eqn 6.3 in NURBS.
-
-Inputs:
-- u : knot value
-- Q : point to project
-- C : curve point at u
-- dC : first curve derivative at u
-- ddC : second curve derivative at u
-
-Outputs:
-- fu : f(u)
-- fprimeu : f'(u)
-"""
-function f(u,Q,C,dC,ddC)
-
-    fu = LinearAlgebra.dot(dc,C-Q)
-    fprimeu = LinearAlgebra.dot(ddC,(C-Q)) + LinearAlgebra.norm(dC)^2
-
-    return fu, fprimeu
-
-end
-
-"""
-    projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
-
-Run convergence criteria loop (Newton iteration), returning the knot value that satisfies the criteria.
-
-Inputs:
-- n : there are n+1 control points, P
-- p : curve degree
-- U : knot vector
-- P : control points
-- ui : the parametric start point
-- Q : the point to project
-- eps1 : tolerance for points being on the curve
-- eps2 : tolerance for points being projected on the curve
-- a : the lower bound of the span we're checking
-- b : the upper bound of the span we're checking
-- closed : boolean whether spline is closed or open
-
-Outputs:
-- uip1 : the final knot calculated after criteria are met
-"""
-function projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
-
-    while true
-        #calculate C(u_i) and C'(u_i)
-        CK = curvederivatives1(n, p, U, P, ui, 2)
-        #TODO make sure this is actual structure of CK
-        C = CK[:,1]
-        dC = CK[:,2]
-        ddC = Ck[:,3]
-
-        #calculate f(u_i) and f'(u_i)
-        fu, fprimeu = f(ui,Q,C,dC,ddC)
-        #calculate u_{i+1}
-        uip1 = ui - fu/fprimeu
-        ## Check criteria
-
-        #criteria 1: are they the same point on the spline
-        crit1 = LinearAlgebra.norm(C-Q)
-        #criteria 2: are they aligned
-        num2 = LinearAlgebra.norm(LinearAlgebra.dot(dC,(C-Q)))
-        den2 = LinearAlgebra.norm(dC)*LinearAlgebra.norm(C-Q)
-        crit2 = num2/den2
-
-        #if criteria 1 or 2 is not met
-        if crit1 > eps1 || crit2 > eps2
-            ##compute a new uip1
-            # update u to be next value
-            ui = uip1
-            #calculate f(u_i) and f'(u_i)
-            fu, fprimeu = f(ui,C,Q)
-            #calculate u_{i+1}
-            uip1 = ui - fu/fprimeu
-
-            ##check criteria 3 and 4
-            #criteria 3: is the point beyond the spline ends? if so, adjust the point
-            if closed == false
-                if uip1 < a
-                    uip1 = a
-                elseif uip1 > b
-                    uipq = b
-                end
-            else
-                if uip1 < a
-                    uip1 = b - (a - uip1)
-                elseif uip1 > b
-                    uipq = a + (uip1 - b)
-                end
-            end
-
-            #criteria 4: Was the change in points very small?
-            crit4 = LinearAlgebra.norm((uip1-ui)*dC)
-
-            #if any of criteria 1, 2, or 4 is satisfied, break.
-            if crit1 <= eps1 || crit2 <= eps2 || crit4 <= eps1
-                #crit1 means the point is on the spline
-                #crit2 means the point is properly projected
-                #crit4 means the point is off the end point of the spline.
-                break
-            end
-
-        else #if both were satisfied, then we're done.
-            break
-        end
-
-    end
-
-    return uip1
-
-end
-
-"""
-    projectpoints(n,p,U,P,Q,eps1=1e-10,eps2=1e-10,ncheckvals=100)
-
-Project points, Q, onto spline, returning projected points, R.
-
-Inputs:
-- n : there are n+1 control points, P
-- p : curve degree
-- U : knot vector
-- P : control points
-- eps1 : tolerance for points being on the curve
-- eps2 : tolerance for points being projected on the curve
-- ncheckvals : number of points used to look for good starting points.
-
-Outputs:
-- R : the projected points.
-"""
-function projectpoints(n,p,U,P,Q; eps1=1e-10,eps2=1e-10,ncheckvals=100) #TODO check what tolerances are good.
-    #weight control points
-    Pw = [P ones(length(P[:,1]))]
-
-    ##find start values, u0
-    #setup a somewhat fine distribution of candidates
-    ucheck = collect(range(0,stop=1,length=ncheckvals))
-
-    #get curve points at knot values we're comparing
-    for i=1:ncheckvals
-        Ccheck[:,i] = curvepoint(n, p, U, Pw, ucheck[i])
-    end
-
-    #get distances for each candidate start points and find minimum for each point, Q
-    u0 = zeros(length(Q[:,1]))
-    for i=1:length(Q[:,1])
-        mindist = Inf
-        for j=1:ncheckvals
-            dist = LinearAlgebra.norm(Q[j,:]-Ccheck[i,:])
-            if dist < mindist
-                mindist = dist
-                u0[i] = ucheck[j]
-            end
-        end
-    end
-
-    #for each u0, find the parametric value associated with the point's projection onto the curve.
-    uproj = zeros(length(Q[:,1]))
-    for i=1:length(u0)
-        uproj[i] = projectionloop(n,p,U,P,u0,Q,eps1,eps2)
-    end
-
-    #return projected curve points, R_k
-    Pw = [P ones(length(P[:,1]))]
-    R = zeros(size(Q))
-    for i=1:length(uproj)
-        R[i,:] = curvepoint(n, p, U, Pw, uproj[i])
-    end
-
-    return R
-
-end
-
-
-"""
-
-Compute global curve approximation of datapoints within bound, E.
-
-Inputs:
-- m : there are m+1 data points to approximate
-- Q : data points to approximate
-- p : degree of approximating curve
-- E : maximum error allowance for approximating curve
-- knotplacement : knot placement scheme (centripetal, or chordwise)
-
-Outputs:
-- n : there are n+1 control points for approximating curve
-- U : knot vector for approximating curve
-- P : Control points of approximating curve
-"""
-function globalcurveapproximation(m,Q,p,E; knotplacement="centripetal")
-
-    #compute ubar and load into ub[]
-    ub = computeubar(m,Q,knotplacement)
-    U = zeros(m+2)
-    U[1:2] .= 0
-    U[m+1:m+2] .= 1
-    for i=2:m+1-p
-        U[i+p] = sum(ub[i:i+p-1])/p
-    end
-    P = copy(Q)
-    ek = zeros(m+1)
-    n=m
-
-    for deg=1:p+1
-        nhat,Uhat,Phat = removeknotsboundcurve(n,p,U,P,ub,ek,E)
-        if deg == p
-            break
-        end
-
-        #let U be the knot vector obtained by degree elevating Uh from deg to deg+1 (this is simply increasing the mulitplicities of each knot by 1. No need for degreeelevatecurve function)
-        U = copy(Uhat)
-        uniqueknot = unique(Uhat)
-
-        insert!(U,1,0)
-        knot2add = 0
-        nextidx = 1
-        for i=2:length(uniqueknot)
-            nextidx = findnext(y->y!=knot2add,U,nextidx)
-            knot2add = uniqueknot[i]
-            insert!(U,nextidx,knot2add)
-        end
-
-        #reset n
-        n = nhat + length(unique(U))
-
-        #fit a least squares curve to the Q_k, using n, ub, degree=deg+1, and new knot vector U to get new control pointsopen
-        U, P = leastsquarescurve(Q,m,n,deg+1,ub,U,knotplacement=knotplacement)
-
-        #project all Q_k to current curve to get R_k = C(u_k).
-        #! YOU ARE HERE
-        R = projectpoints(n,p,U,P,Q)
-
-        #Update ek and ub
-        for i=1:length(ek)
-            ek[i] = LinearAlgebra.norm(Q[i,:]-R[i,:])
-        end
-        ub = U #? Not sure how this works...
-
-
-    end
-
-    return n, U, P
-end
+# """
+#     leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=[], I=[], Wd=[]; knotplacement)
+
+# Compute the weighted, constrained, least squares curve fit. (NURBS A9.6)
+
+# Inputs:
+
+# - Q : Data points to be approximated
+# - r : there are r+1 datapoints.
+# - Wq : weights of "tightness" of approximation to each data point (values greater than zero indicate unconstrained, values less than zero indicat constraint.)
+# - D : optional derivatives at any of the points, Q
+# - s : number of derivatives in D is s+1
+# - I : Maps the derivatives in D to the corresponding points in Q
+# - Wd : weights associated with derivatives. Values greater than zero indicate
+# unconstrained, values less than zero indicate constraint
+# - n : n+1 control points are used for the fit.
+# - p : the degree of the curve to fit.
+# - knotplacement : knot placement scheme ("centripital" or "chordlength")
+
+# Outputs:
+
+# - U : knot vector
+# - P : control points
+# """
+# function leastsquarescurve(Q,r,n,p,ubar=[],U=[], Wq=[], D=[], s=-1, I=[], Wd=[]; knotplacement="centripetal")
+
+#     #initialize output
+#     m = n+p+1
+#     P = zeros(n+1,length(Q[1,:]))
+
+#     #do some setting up of weights based on inputs.
+#     if isempty(Wq)
+#         Wq = ones(length(Q[:,1]))
+#         ru = length(Q[:,1]) - 1
+#         rc = -1
+#     else
+#         ru = -1
+#         rc = -1
+#         for i=1:r+1
+#             if Wq[i] > 0.0
+#                 ru += 1
+#             else
+#                 rc += 1
+#             end
+#         end
+#     end
+
+#     if isempty(Wd)
+#         Wd = ones(length(Q[:,1]))
+#         I = -ones(length(Q[:,1]))
+#         su = length(Q[:,1])-1
+#         sc = -1
+#     else
+#         su = -1
+#         sc = -1
+#         for i=1:s+1
+#             if Wq[i] > 0.0
+#                 su += 1
+#             else
+#                 sc += 1
+#             end
+#         end
+#     end
+
+#     mu = ru+su+1
+#     mc = rc+sc+1
+
+#     if mc >= n || mc+n >= mu+1
+#         error("That's not going to work. (see NURBS eqn 9.70)")
+#     else
+#         #initialize all the local matrices
+#         N = zeros(mu+1,n+1)
+#         M = zeros(mc+1,n+1)
+#         S = zeros(mu+1)
+#         T = zeros(mc+1)
+#         A = zeros(mc+1)
+#         W = zeros(mu+1,mu+1)
+#     end
+
+#     ##-- set up knots
+#     if isempty(U)
+#         U = zeros(m+1)
+#         ubar = computeubar(r,Q,knotplacement)
+
+#         if knotplacement != "centripetal" && knotplacement != "chordlength" #eqn 9.3
+#             warn("No valid knot placement scheme selected, using equidistant...")
+#             U = collect(range(0,stop=1,length=m))
+#         else
+#             #from \bar{u}_k get the knot vector
+#             d = (r+1)/(n-p+1)
+#             #from \bar{u}_k get the knot vector
+#             U[1:p+1] .= 0
+#             U[m+1-p:m+1] .= 1
+#             for j=2:n+1-p
+#                 i = Int(floor(j*d))
+#                 alpha = j*d-i
+#                 U[j+p] = (1-alpha)*ubar[i-1] + alpha*ubar[i]
+#             end
+#         end
+#     end
+
+#     ##-- Set up arrays: N, W, S, T, M
+# #! YOU ARE HERE, BIG MATRICES ARE NOT WORKING, LOTS OF ZEROS AND NANS...
+#     for k=1:length(Q[1,:]) #do each dimension separately.
+#         j = 1
+#         mu2 = 1
+#         mc2 = 1
+#         for i=1:r
+#             println("i: ", i)
+#             span = Splines.getspanindex(n,p,ubar[i],U)
+#             dflag = 0 #derivative flag
+#             #check for derivative at point
+#             if j <= s
+#                 if i == I[j]
+#                     dflag = 1
+#                 end
+#             end
+
+#             if dflag == 0 #if derivative not present
+#                 funs = Splines.basisfunctions(span+1, ubar[i], p, U)
+#             else
+#                 funs = Splines.basisfunctionsderivatives(span+1, ubar[i], p, 1, U)
+#             end
+
+#             #if point is unconstrained
+#             if Wq[i] > 0
+#                 W[mu2,mu2] = Wq[i]
+#                 N[mu2,span+1-p:span+1] = funs
+#                 S[mu2] = W[mu2,mu2]*Q[i,k]
+#                 mu2 += 1
+#             else #if point is constrained
+#                 M[mc2,span+1-p:span+1] = funs
+#                 T[mc2] = Q[i,k]
+#                 mc2 += 1
+#             end #if unconstrained
+
+#             #if derivative given for this point
+#             if dflag == 1
+#                 if Wd[j] > 0 #unconstrained derivative
+#                     W[mu2,mu2] = Wd[j]
+#                     N[mu2,span+1-p:span+1] = funs[2,:]
+#                     S[mu2] = W[mu2,mu2]*D[j]
+#                     mu2 += 1
+#                 else #constrained derivative
+#                     M[mc2,span+1-p:span+1] = funs[2,:]
+#                     T[mc2] = D[j]
+#                     mc2 += 1
+#                 end
+#                 j += 1
+#             end #if dflag
+#         end #for r
+
+#         NtransWN = N'*W*N
+#         NtransWNinv = LinearAlgebra.inv(NtransWN)
+#         NtransWS = N'*W*S
+
+#         if mc < 0 #if no constraints
+#             P[:,k] = NtransWN\NtransWS
+#         else
+#             A = (M*NtransWNinv*M') \ (M*NtransWNinv*NtransWS-T)
+#             P[:,k] = NtransWN \ (NtransWS - M'*A)
+#         end
+
+#     end #for dimension
+
+#     return U, P
+
+# end
+
+# """
+#     getremovalboundcurve(n,p,U,P,u,r,s)
+
+# Compute the knot removal error bounds, \$B_r\$. (NURBS A9.8)
+
+# Inputs:
+# - n : there are n+1 control points
+# - p : curve degree
+# - U : knot vector
+# - P : control points
+# - u : internal knot
+# - r : index of u in U (assuming zero indexing)
+# - s : multiplicity of u
+
+# Outputs:
+# - Br : distances
+# """
+# function getremovalboundcurve(n,p,U,P,u,r,s)
+#     println("knot: ",r)
+#     ord = p+1
+#     println("ord: ", ord)
+#     lastidx = r-s +1
+#     println("last: ", lastidx)
+#     firstidx = r-p +1
+#     println("first: ", firstidx)
+#     off = firstidx-1 #difference in index between temp and P.
+#     println("off: ", off)
+#     temp = zeros(size(P))
+#     println("P[off,:]: ", P[off,:])
+#     temp[1,:] = P[off,:]
+#     println("P[lastidx+1,:]: ", P[lastidx+1,:])
+#     temp[lastidx+1-off,:] = P[lastidx+1,:]
+#     i = firstidx
+#     j = lastidx
+#     ii = 1 +1
+#     jj = lastidx-off +1
+#     while j-i > 0
+#         #compute new control points for one removal step
+#         alfi = (u-U[i])/(U[i+ord]-U[i])
+#         alfj = (u-U[j])/(U[j+ord]-U[j])
+#         temp[ii] = (P[i]-(1-alfi)*temp[ii-1])/alfi
+#         temp[jj] = (P[j]-alfj*temp[jj+1])/(1-alfj)
+#         i += 1
+#         ii += 1
+#         j -= 1
+#         jj -= 1
+#     end #while j-1>0
+
+#     if j-i < 0 #now get bound
+#         Br = LinearAlgebra.norm(temp[ii-1]-temp[jj+1]) #eqn 9.82
+#     else
+#         alfi = (u-U[i])/(U[i+ord]-U[i])
+#         Br = LinearAlgebra.norm( P[i] - (alfi*temp[ii+1]+(1-alfi)*temp[ii-1]) ) #eqn 9.80
+#     end
+
+#     return Br
+# end
+
+# """
+#     removeknotsboundcurve(n,p,U,P,ub,ek,E)
+
+# Remove knots from bounded curve. (NURBS A9.9)
+
+# Inputs:
+# - n : there are n+1 control points
+# - p : curve degree
+# - U : knot vector
+# - P : control points
+# - u : internal knot
+# - ub : knot to remove?
+# - ek : accumulated error?
+# - E : max allowable error
+
+# Outputs:
+# - ek : accumulated error
+# - nh : new n
+# - Uh : new U
+# - Ph : new P
+# """
+# function removeknotsboundcurve(n,p,U,P,ub,ek,E)
+
+#     #get Br values for all distinct interior knots
+#     uniqueknot = unique(U)
+#     Br = zeros(length(uniqueknot)-2)
+
+#     multiplicity = [(count(U->U==i,U)) for i in uniqueknot]
+#     multiplicity = multiplicity[2:end-1]
+#     firstidx = zeros(Int,length(Br))
+#     for i=1:length(firstidx)
+#         firstidx[i] = (LinearIndices(U))[findall(U->U==uniqueknot[i+1],U)][1]
+#     end
+
+
+#     for i=1:length(uniqueknot)-2
+#         Br[i] = Splines.getremovalboundcurve(n,p,U,P,uniqueknot[i+1],firstidx[i]-1,multiplicity[i])
+#     end
+
+#     #for each basis function, get range of parameter indices.
+#     basisindices = zeros(length(P[:,1]),p+2)
+#     for i=1:length(P[:,1])
+#         basisindices[i,:] = collect(i:p+i+1)
+#     end
+
+#     while true
+#         m = length(U)-1
+
+#         #find knot with smallest Br bound
+#         minBr, minidx = findmin(Br)
+
+#         #set r and s
+#         #get unique knots and their mulitplicities
+#         uniqueknot = unique(U)
+#         multiplicity = [(count(U->U==i,U)) for i in uniqueknot]
+#         multiplicity = multiplicity[2:end-1]
+#         s = multiplicity[minidx]
+
+#         firstidx = zeros(Int,length(Br))
+#         for i=1:length(uniqueknot)-2
+#             firstidx[i] = (LinearIndices(U))[findall(U->U==uniqueknot[i+1],U)][1]
+#         end
+#         r = firstidx[minidx]
+
+#         if minBr==Inf
+#             break #finished, you've done all the interior knots
+#         end
+#         #using eqns 9.81 and 9.83 and A2.4, compute NewError[k], form temp[k] = ek[k] + NewError[k] at all ub[k] values falling within the relevant domain
+#         temp = zeros(size(ek))
+#         NewError = 0.0
+#         for i=1:length(ub)
+#             if ub[i] >= U[r]-Br[minidx] && ub[i] <= U[r]+Br[minidx]
+#                 N = Splines.singlebasisfunction(p,m,U,i,ub[i])
+#                 if mod(p+s,2) == 0
+#                     k = Int((p+s)/2)
+#                     NewError = N*minBr
+#                 else
+#                     k = Int(floor((p+s+1)/2))
+#                     alpha = (U[r] - U[r-k+1])/(U[r-k+p+2] - U[r-k+1])
+#                     NewError = (1-alpha)*N*minBr
+#                 end
+#                 temp[k] = ek[k] + NewError
+#             end
+#         end
+
+#         #if knot is removable (all temp[k] <= E)
+#         if all(temp .<= E)
+#             println("REMOVING")
+#             #update ek for relevant range
+#             for i=1:length(ub)
+#                 if ub[i] >= U[r]-Br[minidx] && ub[i] <= U[r]+Br[minidx]
+#                     ek[k] = temp[k]
+#                 end
+#             end
+
+#             #remove knot (A5.8 without tolerance check)
+#             Pw = [P ones(length(P[:,1]))]
+#             t, U, Pw = Splines.removecurveknot(n,p,U,Pw,U[r],r,s,num,tolcheck=false)
+
+#             #if no more knots, break
+#             if length(U) == 2*(p+1)
+#                 break #no more knots to remove.
+#             end
+
+#             #using Eqn 9.84, compute new index ranges for affected basis functions
+#             for i=r-p-1:r-s
+#                 basisindices[i,:] = collect(i:p+i+1)
+#             end
+
+#             #using Eqn 9.85 compute new error bounds for the relevant knots
+#             for i=1:length(uniqueknot)-2
+#                 firstidx[i] = (LinearIndices(U))[findall(U->U==uniqueknot[i+1],U)][1]
+#                 if i < max(r-p,p+1) && i > min(r+p-s+1,n)
+#                     Br[i] = getremovalboundcurve(n,p,U,P,uniqueknot[i+1],firstidx[i]-1,multiplicity[i+1])
+#                 end
+#             end
+
+#         else
+#             #set this Br to Inf
+#             Br[minidx] = Inf
+#         end
+#     end
+
+#     nh = length(P[:,1])-1
+#     return ek,nh,U,P
+# end
+
+# """
+#     f(u,Q,C,dC,ddC)
+
+# Auxiliar function for point projection: Solves for f(u) and f'(u) used in eqn 6.3 in NURBS.
+
+# Inputs:
+# - u : knot value
+# - Q : point to project
+# - C : curve point at u
+# - dC : first curve derivative at u
+# - ddC : second curve derivative at u
+
+# Outputs:
+# - fu : f(u)
+# - fprimeu : f'(u)
+# """
+# function f(u,Q,C,dC,ddC)
+
+#     fu = LinearAlgebra.dot(dc,C-Q)
+#     fprimeu = LinearAlgebra.dot(ddC,(C-Q)) + LinearAlgebra.norm(dC)^2
+
+#     return fu, fprimeu
+
+# end
+
+# """
+#     projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
+
+# Run convergence criteria loop (Newton iteration), returning the knot value that satisfies the criteria.
+
+# Inputs:
+# - n : there are n+1 control points, P
+# - p : curve degree
+# - U : knot vector
+# - P : control points
+# - ui : the parametric start point
+# - Q : the point to project
+# - eps1 : tolerance for points being on the curve
+# - eps2 : tolerance for points being projected on the curve
+# - a : the lower bound of the span we're checking
+# - b : the upper bound of the span we're checking
+# - closed : boolean whether spline is closed or open
+
+# Outputs:
+# - uip1 : the final knot calculated after criteria are met
+# """
+# function projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
+
+#     while true
+#         #calculate C(u_i) and C'(u_i)
+#         CK = curvederivatives1(n, p, U, P, ui, 2)
+#         #TODO make sure this is actual structure of CK
+#         C = CK[:,1]
+#         dC = CK[:,2]
+#         ddC = Ck[:,3]
+
+#         #calculate f(u_i) and f'(u_i)
+#         fu, fprimeu = f(ui,Q,C,dC,ddC)
+#         #calculate u_{i+1}
+#         uip1 = ui - fu/fprimeu
+#         ## Check criteria
+
+#         #criteria 1: are they the same point on the spline
+#         crit1 = LinearAlgebra.norm(C-Q)
+#         #criteria 2: are they aligned
+#         num2 = LinearAlgebra.norm(LinearAlgebra.dot(dC,(C-Q)))
+#         den2 = LinearAlgebra.norm(dC)*LinearAlgebra.norm(C-Q)
+#         crit2 = num2/den2
+
+#         #if criteria 1 or 2 is not met
+#         if crit1 > eps1 || crit2 > eps2
+#             ##compute a new uip1
+#             # update u to be next value
+#             ui = uip1
+#             #calculate f(u_i) and f'(u_i)
+#             fu, fprimeu = f(ui,C,Q)
+#             #calculate u_{i+1}
+#             uip1 = ui - fu/fprimeu
+
+#             ##check criteria 3 and 4
+#             #criteria 3: is the point beyond the spline ends? if so, adjust the point
+#             if closed == false
+#                 if uip1 < a
+#                     uip1 = a
+#                 elseif uip1 > b
+#                     uipq = b
+#                 end
+#             else
+#                 if uip1 < a
+#                     uip1 = b - (a - uip1)
+#                 elseif uip1 > b
+#                     uipq = a + (uip1 - b)
+#                 end
+#             end
+
+#             #criteria 4: Was the change in points very small?
+#             crit4 = LinearAlgebra.norm((uip1-ui)*dC)
+
+#             #if any of criteria 1, 2, or 4 is satisfied, break.
+#             if crit1 <= eps1 || crit2 <= eps2 || crit4 <= eps1
+#                 #crit1 means the point is on the spline
+#                 #crit2 means the point is properly projected
+#                 #crit4 means the point is off the end point of the spline.
+#                 break
+#             end
+
+#         else #if both were satisfied, then we're done.
+#             break
+#         end
+
+#     end
+
+#     return uip1
+
+# end
+
+# """
+#     projectpoints(n,p,U,P,Q,eps1=1e-10,eps2=1e-10,ncheckvals=100)
+
+# Project points, Q, onto spline, returning projected points, R.
+
+# Inputs:
+# - n : there are n+1 control points, P
+# - p : curve degree
+# - U : knot vector
+# - P : control points
+# - eps1 : tolerance for points being on the curve
+# - eps2 : tolerance for points being projected on the curve
+# - ncheckvals : number of points used to look for good starting points.
+
+# Outputs:
+# - R : the projected points.
+# """
+# function projectpoints(n,p,U,P,Q; eps1=1e-10,eps2=1e-10,ncheckvals=100) #TODO check what tolerances are good.
+#     #weight control points
+#     Pw = [P ones(length(P[:,1]))]
+
+#     ##find start values, u0
+#     #setup a somewhat fine distribution of candidates
+#     ucheck = collect(range(0,stop=1,length=ncheckvals))
+
+#     #get curve points at knot values we're comparing
+#     for i=1:ncheckvals
+#         Ccheck[:,i] = curvepoint(n, p, U, Pw, ucheck[i])
+#     end
+
+#     #get distances for each candidate start points and find minimum for each point, Q
+#     u0 = zeros(length(Q[:,1]))
+#     for i=1:length(Q[:,1])
+#         mindist = Inf
+#         for j=1:ncheckvals
+#             dist = LinearAlgebra.norm(Q[j,:]-Ccheck[i,:])
+#             if dist < mindist
+#                 mindist = dist
+#                 u0[i] = ucheck[j]
+#             end
+#         end
+#     end
+
+#     #for each u0, find the parametric value associated with the point's projection onto the curve.
+#     uproj = zeros(length(Q[:,1]))
+#     for i=1:length(u0)
+#         uproj[i] = projectionloop(n,p,U,P,u0,Q,eps1,eps2)
+#     end
+
+#     #return projected curve points, R_k
+#     Pw = [P ones(length(P[:,1]))]
+#     R = zeros(size(Q))
+#     for i=1:length(uproj)
+#         R[i,:] = curvepoint(n, p, U, Pw, uproj[i])
+#     end
+
+#     return R
+
+# end
+
+
+# """
+#     globalcurveapproximation(m,Q,p,E; knotplacement)
+
+# Compute global curve approximation of datapoints within bound, E. (NURBS A9.10)
+
+# Inputs:
+# - m : there are m+1 data points to approximate
+# - Q : data points to approximate
+# - p : degree of approximating curve
+# - E : maximum error allowance for approximating curve
+# - knotplacement : knot placement scheme (centripetal, or chordlength)
+
+# Outputs:
+# - n : there are n+1 control points for approximating curve
+# - U : knot vector for approximating curve
+# - P : Control points of approximating curve
+# """
+# function globalcurveapproximation(m,Q,p,E; knotplacement="centripetal")
+
+#     #compute ubar and load into ub[]
+#     ub = Splines.computeubar(m,Q,knotplacement)
+#     #set U and P to be the degree 1 curve interpolating Q
+#     U = [0.0; ub; 1.0]
+#     P = copy(Q)
+#     ek = zeros(m+1)
+#     n = m
+
+#     for deg=1:p+1
+#         ek,n,U,P = Splines.removeknotsboundcurve(n,deg,U,P,ub,ek,E)
+#         if deg == p
+#             break
+#         end
+
+#         #let U be the knot vector obtained by degree elevating Uh from deg to deg+1 (this is simply increasing the mulitplicities of each knot by 1. No need for degreeelevatecurve function)
+#         uniqueknot = unique(U)
+
+#         insert!(U,1,0)
+#         knot2add = 0
+#         nextidx = 1
+#         for i=2:length(uniqueknot)
+#             nextidx = findnext(y->y!=knot2add,U,nextidx)
+#             knot2add = uniqueknot[i]
+#             insert!(U,nextidx,knot2add)
+#         end
+
+#         #reset n
+#         n = length(U) - deg - 1
+
+#         #fit a least squares curve to the Q_k, using n, ub, degree=deg+1, and new knot vector U to get new control pointsopen
+#         #! THIS IS BEING BROKEN RIGHT NOW, NEED TO FIGURE IT OUT...
+#         U, P = Splines.leastsquarescurve(Q,m,n,deg+1,ub,U,knotplacement=knotplacement)
+
+#         #project all Q_k to current curve to get R_k = C(u_k).
+#         #! YOU ARE HERE
+#         R = projectpoints(n,p,U,P,Q)
+
+#         #Update ek and ub
+#         for i=1:length(ek)
+#             ek[i] = LinearAlgebra.norm(Q[i,:]-R[i,:])
+#         end
+#         ub = U #? Not sure how this works...
+
+
+#     end
+
+#     return n, U, P
+# end
