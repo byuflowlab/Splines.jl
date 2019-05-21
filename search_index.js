@@ -121,11 +121,19 @@ var documenterSearchIndex = {"docs": [
 },
 
 {
+    "location": "Functions/#Splines.globalcurveinterpolation-NTuple{4,Any}",
+    "page": "Functions",
+    "title": "Splines.globalcurveinterpolation",
+    "category": "method",
+    "text": "globalcurveinterpolation(n,Q,r,p; knotplacement)\n\nInterpolate points Q, with a B-Spline of degree p. (NURBS A9.1)\n\nInputs:\n\nn : n+1 is number of data points to be interpolated\nQ : coordinates of data points to be interpolated\nr : the number of coordinates per Q (the spacial dimension)\np : degree of interpalatory spline\nknotplacement : the knot placement scheme; either chordlength (common, uniform parameterization) or centripetal (good for data that takes sharp turns).\n\nOutputs:\n\nm : number of knots-1\nU : knot vector\nP : control points\n\n\n\n\n\n"
+},
+
+{
     "location": "Functions/#B-Spline-Functions-1",
     "page": "Functions",
     "title": "B-Spline Functions",
     "category": "section",
-    "text": "Splines.getspanindex(n, p, u, U)import Splines\nU = [0,0,0,1,2,3,4,4,5,5,5]\np = 2\nn = length(U)-p-1ExampleU = [0,0,0,1,2,3,4,4,5,5,5]\np = 2\nn = length(U)-p-1\n\nu = 5/2\nSplines.getspanindex(n,p,u,U)u = 5\nSplines.getspanindex(n,p,u,U)u = 0\nSplines.getspanindex(n,p,u,U)Splines.basisfunctions(i, u, p, U)Exampleimport Splines # hide\nU = [0,0,0,1,2,3,4,4,5,5,5]\nu = 5/2\np = 2\ni = 5\nbases = Splines.basisfunctions(i,u,p,U)Splines.basisfunctionsderivatives(i, u, p, n, U)Exampleimport Splines # hide\nU = [0,0,0,1,2,3,4,4,5,5,5]\nu = 5/2\np = 2\ni = 5\nn = p\nderivatives = Splines.basisfunctionsderivatives(i,u,p,n,U)Splines.curvederivatives1(n, p, U, P, u, d)Exampleimport Splines # hide\nU = [0,0,0,1,2,3,4,4,5,5,5]\nu = 5/2\np = 2\nn = length(U)-p-1\nP = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]\nd = 1\ncurveDerivatives = Splines.curvederivatives1(n, p, U, P, u, d)Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)Exampleimport Splines # hide\nU = [0,0,0,0,2/5,3/5,3/5,1,1,1,1]\nu = 1/2\ni = 4\nd = 1\np = 3\nP = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]\nn = length(P[:,1])-1\nr1 = 0\nr2 = n\ncprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)"
+    "text": "Splines.getspanindex(n, p, u, U)import Splines\nU = [0,0,0,1,2,3,4,4,5,5,5]\np = 2\nn = length(U)-p-1ExampleU = [0,0,0,1,2,3,4,4,5,5,5]\np = 2\nn = length(U)-p-1\n\nu = 5/2\nSplines.getspanindex(n,p,u,U)u = 5\nSplines.getspanindex(n,p,u,U)u = 0\nSplines.getspanindex(n,p,u,U)Splines.basisfunctions(i, u, p, U)Exampleimport Splines # hide\nU = [0,0,0,1,2,3,4,4,5,5,5]\nu = 5/2\np = 2\ni = 5\nbases = Splines.basisfunctions(i,u,p,U)Splines.basisfunctionsderivatives(i, u, p, n, U)Exampleimport Splines # hide\nU = [0,0,0,1,2,3,4,4,5,5,5]\nu = 5/2\np = 2\ni = 5\nn = p\nderivatives = Splines.basisfunctionsderivatives(i,u,p,n,U)Splines.curvederivatives1(n, p, U, P, u, d)Exampleimport Splines # hide\nU = [0,0,0,1,2,3,4,4,5,5,5]\nu = 5/2\np = 2\nn = length(U)-p-1\nP = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]\nd = 1\ncurveDerivatives = Splines.curvederivatives1(n, p, U, P, u, d)Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)Exampleimport Splines # hide\nU = [0,0,0,0,2/5,3/5,3/5,1,1,1,1]\nu = 1/2\ni = 4\nd = 1\np = 3\nP = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]\nn = length(P[:,1])-1\nr1 = 0\nr2 = n\ncprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)Splines.globalcurveinterpolation(n,Q,r,p; knotplacement)ExampleQ = [0 0; 3 4; -1 4; -4 0; -4 -3]\nr = 2\nn= 4\np = 3\nU = [0 0 0 0 28/51 1 1 1 1]\nm, U, P =Splines.globalcurveinterpolation(n,Q,r,p;knotplacement=\"chordlength\")"
 },
 
 {
@@ -165,7 +173,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Functions",
     "title": "Splines.refineknotvectorcurve",
     "category": "function",
-    "text": "refineknotvectorcurve(n, p, U, Pw, X, r)\n\nRefine curve knot vector using NURBS A5.4.\n\nThis algorithm is simply a knot insertion algorithm that allows for multiple knots to be added simulataneously, i.e., a knot refinement procedure.\n\nInputs:\n\nn : the number of control points minus 1 (the index of the last control point) before insertion\np : the curve order\nU : the knot vector before insertion\nPw : the set of weighted control points and weights before insertion\nX : elements, in ascending order, to be inserted into U (elements should be repeated according to their multiplicities, e.g., if x and y have multiplicites 2 and 3, X = [x,x,y,y,y])\nr : length of X vector\n\nOutputs:\n\nUbar : the knot vector after insertion\nQw : the set of weighted control points and weights after insertion\n\n\n\n\n\n"
+    "text": "refineknotvectorcurve(n, p, U, Pw, X, r)\n\nRefine curve knot vector using NURBS A5.4.\n\nThis algorithm is simply a knot insertion algorithm that allows for multiple knots to be added simulataneously, i.e., a knot refinement procedure.\n\nInputs:\n\nn : the number of control points minus 1 (the index of the last control point) before insertion\np : the curve order\nU : the knot vector before insertion\nPw : the set of weighted control points and weights before insertion\nX : elements, in ascending order, to be inserted into U (elements should be repeated according to their multiplicities, e.g., if x and y have multiplicites 2 and 3, X = [x,x,y,y,y])\nr : length of X vector - 1\n\nOutputs:\n\nUbar : the knot vector after insertion\nQw : the set of weighted control points and weights after insertion\n\n\n\n\n\n"
 },
 
 {
