@@ -829,181 +829,190 @@ end
 #     return ek,nh,U,P
 # end
 
-# """
-#     f(u,Q,C,dC,ddC)
+"""
+    f(u,Q,C,dC,ddC)
 
-# Auxiliar function for point projection: Solves for f(u) and f'(u) used in eqn 6.3 in NURBS.
+Auxiliar function for point projection: Solves for f(u) and f'(u) used in eqn 6.3 in NURBS.
 
-# Inputs:
-# - u : knot value
-# - Q : point to project
-# - C : curve point at u
-# - dC : first curve derivative at u
-# - ddC : second curve derivative at u
+Inputs:
+- u : knot value
+- Q : point to project
+- C : curve point at u
+- dC : first curve derivative at u
+- ddC : second curve derivative at u
 
-# Outputs:
-# - fu : f(u)
-# - fprimeu : f'(u)
-# """
-# function f(u,Q,C,dC,ddC)
+Outputs:
+- fu : f(u)
+- fprimeu : f'(u)
+"""
+function f(u,Q,C,dC,ddC)
 
-#     fu = LinearAlgebra.dot(dc,C-Q)
-#     fprimeu = LinearAlgebra.dot(ddC,(C-Q)) + LinearAlgebra.norm(dC)^2
+    fu = LinearAlgebra.dot(dC,C-Q)
+    fprimeu = LinearAlgebra.dot(ddC,(C-Q)) + LinearAlgebra.norm(dC)^2
 
-#     return fu, fprimeu
+    return fu, fprimeu
 
-# end
+end
 
-# """
-#     projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
+"""
+    projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
 
-# Run convergence criteria loop (Newton iteration), returning the knot value that satisfies the criteria.
+Run convergence criteria loop (Newton iteration), returning the knot value that satisfies the criteria.
 
-# Inputs:
-# - n : there are n+1 control points, P
-# - p : curve degree
-# - U : knot vector
-# - P : control points
-# - ui : the parametric start point
-# - Q : the point to project
-# - eps1 : tolerance for points being on the curve
-# - eps2 : tolerance for points being projected on the curve
-# - a : the lower bound of the span we're checking
-# - b : the upper bound of the span we're checking
-# - closed : boolean whether spline is closed or open
+Inputs:
+- n : there are n+1 control points, P
+- p : curve degree
+- U : knot vector
+- P : control points
+- ui : the parametric start point
+- Q : the point to project
+- eps1 : tolerance for points being on the curve
+- eps2 : tolerance for points being projected on the curve
+- a : the lower bound of the span we're checking
+- b : the upper bound of the span we're checking
+- closed : boolean whether spline is closed or open
 
-# Outputs:
-# - uip1 : the final knot calculated after criteria are met
-# """
-# function projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
+Outputs:
+- uip1 : the final knot calculated after criteria are met
+"""
+function projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
+    local uip1
+    while true
 
-#     while true
-#         #calculate C(u_i) and C'(u_i)
-#         CK = curvederivatives1(n, p, U, P, ui, 2)
-#         #TODO make sure this is actual structure of CK
-#         C = CK[:,1]
-#         dC = CK[:,2]
-#         ddC = Ck[:,3]
+        ## Check criteria
+        CK = Splines.curvederivatives1(n, p, U, P, ui, 1)
+        C = CK[1,:]
+        dC = CK[2,:]
+        #criteria 1: are they the same point on the spline
+        crit1 = LinearAlgebra.norm(C-Q)
+        #criteria 2: are they aligned
+        num2 = LinearAlgebra.norm(LinearAlgebra.dot(dC,(C-Q)))
+        den2 = LinearAlgebra.norm(dC)*LinearAlgebra.norm(C-Q)
+        crit2 = num2/den2
+        #if criteria 1 or 2 is not met
+        if crit1 > eps1 || crit2 > eps2
+            ##compute a new uip1
+            # update u to be next value
+            # println("ui= ", ui)
+            #calculate C(u_i) and C'(u_i)
+            CK = Splines.curvederivatives1(n, p, U, P, ui, 2)
+            C = CK[1,:]
+            dC = CK[2,:]
+            ddC = CK[3,:]
+            # println("ui= ", ui)
+            # println("Q= ", Q)
+            # println("C= ", C)
+            # println("dC= ", dC)
+            # println("ddC= ", ddC)
 
-#         #calculate f(u_i) and f'(u_i)
-#         fu, fprimeu = f(ui,Q,C,dC,ddC)
-#         #calculate u_{i+1}
-#         uip1 = ui - fu/fprimeu
-#         ## Check criteria
+            #calculate f(u_i) and f'(u_i)
+            fu, fprimeu = Splines.f(ui,Q,C,dC,ddC)
+            #calculate u_{i+1}
+            uip1 = ui - fu/fprimeu
+            # println("uip1: ", uip1)
 
-#         #criteria 1: are they the same point on the spline
-#         crit1 = LinearAlgebra.norm(C-Q)
-#         #criteria 2: are they aligned
-#         num2 = LinearAlgebra.norm(LinearAlgebra.dot(dC,(C-Q)))
-#         den2 = LinearAlgebra.norm(dC)*LinearAlgebra.norm(C-Q)
-#         crit2 = num2/den2
+            ##check criteria 3 and 4
+            #criteria 3: is the point beyond the spline ends? if so, adjust the point
+            if closed == false
+                if uip1 < a
+                    uip1 = a
+                elseif uip1 > b
+                    uip1 = b
+                end
+            else
+                if uip1 < a
+                    uip1 = b - (a - uip1)
+                elseif uip1 > b
+                    uip1 = a + (uip1 - b)
+                end
+            end
 
-#         #if criteria 1 or 2 is not met
-#         if crit1 > eps1 || crit2 > eps2
-#             ##compute a new uip1
-#             # update u to be next value
-#             ui = uip1
-#             #calculate f(u_i) and f'(u_i)
-#             fu, fprimeu = f(ui,C,Q)
-#             #calculate u_{i+1}
-#             uip1 = ui - fu/fprimeu
+            #criteria 4: Was the change in points very small?
+            crit4 = LinearAlgebra.norm((uip1-ui)*dC)
+            # println("it's: ", crit1 <= eps1 , crit2 <= eps2 , crit4 <= eps1)
+            #if any of criteria 1, 2, or 4 is satisfied, break.
+            if crit1 <= eps1 || crit2 <= eps2 || crit4 <= eps1
+                #crit1 means the point is on the spline
+                #crit2 means the point is properly projected
+                #crit4 means the point is off the end point of the spline.
+                break
+            end
 
-#             ##check criteria 3 and 4
-#             #criteria 3: is the point beyond the spline ends? if so, adjust the point
-#             if closed == false
-#                 if uip1 < a
-#                     uip1 = a
-#                 elseif uip1 > b
-#                     uipq = b
-#                 end
-#             else
-#                 if uip1 < a
-#                     uip1 = b - (a - uip1)
-#                 elseif uip1 > b
-#                     uipq = a + (uip1 - b)
-#                 end
-#             end
+            ui = uip1
 
-#             #criteria 4: Was the change in points very small?
-#             crit4 = LinearAlgebra.norm((uip1-ui)*dC)
+        else #if both were satisfied, then we're done.
+            uip1 = ui
+            break
+        end
 
-#             #if any of criteria 1, 2, or 4 is satisfied, break.
-#             if crit1 <= eps1 || crit2 <= eps2 || crit4 <= eps1
-#                 #crit1 means the point is on the spline
-#                 #crit2 means the point is properly projected
-#                 #crit4 means the point is off the end point of the spline.
-#                 break
-#             end
+    end
 
-#         else #if both were satisfied, then we're done.
-#             break
-#         end
+    return uip1
 
-#     end
+end
 
-#     return uip1
+"""
+    projectpoints(n,p,U,P,Q,eps1=1e-10,eps2=1e-10,ncheckvals=100)
 
-# end
+Project points, Q, onto spline, returning projected points, R.
 
-# """
-#     projectpoints(n,p,U,P,Q,eps1=1e-10,eps2=1e-10,ncheckvals=100)
+Inputs:
+- n : there are n+1 control points, P
+- p : curve degree
+- U : knot vector
+- P : control points
+- Q : points to project
+- eps1 : tolerance for points being on the curve
+- eps2 : tolerance for points being projected on the curve
+- ncheckvals : number of points used to look for good starting points.
 
-# Project points, Q, onto spline, returning projected points, R.
+Outputs:
+- uproj : knot values on curve where Q has been projected
+- R : the projected points.
+"""
+function projectpoints(n,p,U,P,Q; eps1=eps(),eps2=eps(),ncheckvals=1000) #TODO check what tolerances are good.
+    #weight control points
+    Pw = [P ones(length(P[:,1]))]
 
-# Inputs:
-# - n : there are n+1 control points, P
-# - p : curve degree
-# - U : knot vector
-# - P : control points
-# - eps1 : tolerance for points being on the curve
-# - eps2 : tolerance for points being projected on the curve
-# - ncheckvals : number of points used to look for good starting points.
+    ##find start values, u0
+    #setup a somewhat fine distribution of candidates
+    ucheck = collect(range(0,stop=1,length=ncheckvals))
 
-# Outputs:
-# - R : the projected points.
-# """
-# function projectpoints(n,p,U,P,Q; eps1=1e-10,eps2=1e-10,ncheckvals=100) #TODO check what tolerances are good.
-#     #weight control points
-#     Pw = [P ones(length(P[:,1]))]
+    #get curve points at knot values we're comparing
+    Ccheck = zeros(ncheckvals,length(Pw[1,:]))
+    for i=1:ncheckvals
+        Ccheck[i,:] = Splines.curvepoint(n, p, U, Pw, ucheck[i])
+    end
+    Ccheck = Ccheck[:,1:end-1]
+    #get distances for each candidate start points and find minimum for each point, Q
+    u0 = zeros(length(Q[:,1]))
+    for i=1:length(Q[:,1])
+        mindist = Inf
+        for j=1:ncheckvals
+            dist = LinearAlgebra.norm(Q[i,:]-Ccheck[j,:])
+            if dist < mindist
+                mindist = dist
+                u0[i] = ucheck[j]
+            end
+        end
+    end
 
-#     ##find start values, u0
-#     #setup a somewhat fine distribution of candidates
-#     ucheck = collect(range(0,stop=1,length=ncheckvals))
+    #for each u0, find the parametric value associated with the point's projection onto the curve.
+    uproj = zeros(length(Q[:,1]))
+    for i=1:length(uproj)
+        uproj[i] = Splines.projectionloop(n,p,U,P,u0[i],Q[i,:],eps1,eps2)
+    end
 
-#     #get curve points at knot values we're comparing
-#     for i=1:ncheckvals
-#         Ccheck[:,i] = curvepoint(n, p, U, Pw, ucheck[i])
-#     end
+    #return projected curve points, R_k
+    Pw = [P ones(length(P[:,1]))]
+    R = zeros(length(Q[:,1]),length(Pw[1,:]))
+    for i=1:length(uproj)
+        R[i,:] = curvepoint(n, p, U, Pw, uproj[i])
+    end
 
-#     #get distances for each candidate start points and find minimum for each point, Q
-#     u0 = zeros(length(Q[:,1]))
-#     for i=1:length(Q[:,1])
-#         mindist = Inf
-#         for j=1:ncheckvals
-#             dist = LinearAlgebra.norm(Q[j,:]-Ccheck[i,:])
-#             if dist < mindist
-#                 mindist = dist
-#                 u0[i] = ucheck[j]
-#             end
-#         end
-#     end
+    return uproj, R
 
-#     #for each u0, find the parametric value associated with the point's projection onto the curve.
-#     uproj = zeros(length(Q[:,1]))
-#     for i=1:length(u0)
-#         uproj[i] = projectionloop(n,p,U,P,u0,Q,eps1,eps2)
-#     end
-
-#     #return projected curve points, R_k
-#     Pw = [P ones(length(P[:,1]))]
-#     R = zeros(size(Q))
-#     for i=1:length(uproj)
-#         R[i,:] = curvepoint(n, p, U, Pw, uproj[i])
-#     end
-
-#     return R
-
-# end
+end
 
 
 # """

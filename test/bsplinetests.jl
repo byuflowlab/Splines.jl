@@ -115,9 +115,9 @@ end
 
 
 
-# @testset "B-Spline: Point Projection onto Curve" begin
+@testset "B-Spline: Point Projection onto Curve" begin
 
-# #Some more test sets for auxiliary functions
+#Some more test sets for auxiliary functions
 # @testset "Point Projection: Loop Function" begin
 # #TODO not sure what to do here, need to think about it more.
 
@@ -127,81 +127,102 @@ end
 # #just set up some toy function, could be anything, to make sure this works. just do something by hand. (eqn 6.3 in book)
 # end
 
-# ## Full Function Tests
-# #gbsairfoil spline parameters
-# #knot vector for gbs airfoil:
-# knots = [0; 0; 0; 0; 0.5; 0.5; 0.5; 1; 1; 1; 1]
-# #controlpoints for gbs airfoil:
-# controlpoints = [1.0 0.0
-#                  1/3 -0.0291073
-#                  0.0 -0.057735
-#                  0.0 0.0
-#                  0.0 0.057735
-#                  1/3 0.147796
-#                  1.0 0.0]
+## Full Function Tests
+#gbsairfoil spline parameters
+#knot vector for gbs airfoil:
+knots = [0; 0; 0; 0; 0.5; 0.5; 0.5; 1; 1; 1; 1]
+#controlpoints for gbs airfoil:
+controlpoints = [1.0 0.0
+                 1/3 0.147796
+                 0.0 0.057735
+                 0.0 0.0
+                 0.0 -0.057735
+                 1/3 -0.0291073
+                 1.0 0.0]
 
-# weightedcontrolpoints = [controlpoints ones(length(controlpoints[:,1]))]
+weightedcontrolpoints = [controlpoints ones(length(controlpoints[:,1]))]
 
-# p = 3
-# n = length(controlpoints[:,1])-1
+p = 3
+n = length(controlpoints[:,1])-1
 
-# #get some points from this spline definition to use for fit tests and stuff.
-# u = collect(range(0,stop=1,length=50))
-# Q = zeros(length(u),3)
-# for i=1:length(u)
-#     Q[i,:] = Splines.curvepoint(n, p, knots, weightedcontrolpoints, u[i])
-# end
-# Q = Q[:,1:2] #just get the x,z coordinates.
+#get some points from this spline definition to use for fit tests and stuff.
+u = collect(range(0,stop=1,length=11))
+Q = zeros(length(u),3)
+for i=1:length(u)
+    Q[i,:] = Splines.curvepoint(n, p, knots, weightedcontrolpoints, u[i])
+end
+Q = Q[:,1:2] #just get the x,z coordinates.
 
-# #Projection points
-# projectionpoints = [1.2  0.0;
-#                     1.2 -0.125;
-#                     1.0 -0.125;
-#                     0.8 -0.125;
-#                     0.6 -0.125;
-#                     0.4 -0.125;
-#                     0.2 -0.125;
-#                     0.0 -0.125;
-#                    -0.1 -0.125;
-#                    -0.1  0.0;
-#                    -0.1  0.2;
-#                     0.0  0.2;
-#                     0.2  0.2;
-#                     0.4  0.2;
-#                     0.6  0.2;
-#                     0.8  0.2;
-#                     1.0  0.2;
-#                     1.2  0.2]
+#Projection points
+projectionpoints = [1.2  0.0;
+                    1.2 -0.125;
+                    1.0 -0.125;
+                    0.8 -0.125;
+                    0.6 -0.125;
+                    0.4 -0.125;
+                    0.2 -0.125;
+                    0.0 -0.125;
+                   -0.1 -0.125;
+                   -0.1  0.0;
+                   -0.1  0.2;
+                    0.0  0.2;
+                    0.2  0.2;
+                    0.4  0.2;
+                    0.6  0.2;
+                    0.8  0.2;
+                    1.0  0.2;
+                    1.2  0.2]
 
-# #The projection function will return the points on the spline where these points are projected to. use the function from the IGAFOIL package that gets the curve normals at such points and make sure the normals are aligned with the vectors from the curve to the projection points.
+#The projection function will return the points on the spline where these points are projected to. use the function from the IGAFOIL package that gets the curve normals at such points and make sure the normals are aligned with the vectors from the curve to the projection points.
+uproj, R = Splines.projectpoints(n,p,knots,controlpoints,projectionpoints; eps1=eps(), eps2=eps(), ncheckvals=1000)
 
-# #TODO This is code from IGAFoil. Need to put in loop using "normalpoints" that come from projection function outputs.
-# ##Code for Obtaining Normals
-# #call curve derivatives function
-# ders = Splines.curvederivatives1(n, p, knots, weightedcontrolpoints, normalpoint, 1)
-# #separate output into parts for NURBS derivatives
-# Aders = ders[:, 1:end-1]
-# wders = ders[:, end]
-# #call NURBS derivatives function
-# dR = Splines.rationalcurvederivatives(Aders, wders, 1)
-# #just use the first derivative (don't need the zeroeth derivative)
-# tangent = dR[end, :]
-# #take the tangent: rotate and normalize to obtain unit normal vector
-# normal = [tangent[2]; -tangent[1]]/LinearAlgebra.norm(tangent)
+R = R[:,1:end-1]
+
+normal = zeros(length(uproj),2)
+for i=1:length(uproj)
+    if uproj[i] == 0.0 && projectionpoints[i,1] == 1.0
+        uproj[i] += eps()
+    end
+    ##Code for Obtaining Normals
+    #call curve derivatives function
+    ders = Splines.curvederivatives1(n, p, knots, weightedcontrolpoints, uproj[i], 1)
+    #separate output into parts for NURBS derivatives
+    Aders = ders[:, 1:end-1]
+    wders = ders[:, end]
+    #call NURBS derivatives function
+    dR = Splines.rationalcurvederivatives(Aders, wders, 1)
+    #just use the first derivative (don't need the zeroeth derivative)
+    tangent = dR[end, :]
+    # println("tangent = ", tangent)
+
+    #take the tangent: rotate and normalize to obtain unit normal vector
+    normal[i,:] = [tangent[2]; -tangent[1]]/LinearAlgebra.norm(tangent) #+ R[i,:]
+end
 
 
-# #test dot product of normals and projection vectors.
-# @test true
+#test dot product of normals and projection vectors.
+
+for i=1:length(uproj)
+    if projectionpoints[i,1] > 1.0
+        @test R[i,:] == [1.0; 0.0]
+    else
+        #normalize projection.
+        projnormed = (projectionpoints[i,:]-R[i,:])/LinearAlgebra.norm(projectionpoints[i,:]-R[i,:])
+        @test isapprox(LinearAlgebra.dot(projnormed,normal[i,:]),1.0,atol=eps())
+    end
+end
 
 
-# #points on curve:
-# pointsoncurve = Q
-# #the projection function should return the values of u that produced the points Q.
+#points on curve:
+pointsoncurve = Q
+uproj, R = Splines.projectpoints(n,p,knots,controlpoints,pointsoncurve; eps1=eps(), eps2=eps(), ncheckvals=1000)
+#the projection function should return the values of u that produced the points Q.
+for i=1:length(pointsoncurve[:,1])
+    #Test that points R, and Q are the same.
+    @test isapprox(R[i,1:end-1], Q[i,:], atol=eps())
+end
 
-# #Test that points R, and Q are the same.
-# @test true
-
-# end
+end
 
 
 # @testset "B-Spline: Knot Removal"
