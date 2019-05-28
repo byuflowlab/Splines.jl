@@ -475,174 +475,217 @@ function globalcurveinterpolation(n,Q,r,p; knotplacement="centripetal")
 end
 
 
-# """
-#     leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=[], I=[], Wd=[]; knotplacement)
+"""
+    leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=[], I=[], Wd=[]; knotplacement)
 
-# Compute the weighted, constrained, least squares curve fit. (NURBS A9.6)
+Compute the weighted, constrained, least squares curve fit. (NURBS A9.6)
 
-# Inputs:
+Inputs:
 
-# - Q : Data points to be approximated
-# - r : there are r+1 datapoints.
-# - Wq : weights of "tightness" of approximation to each data point (values greater than zero indicate unconstrained, values less than zero indicat constraint.)
-# - D : optional derivatives at any of the points, Q
-# - s : number of derivatives in D is s+1
-# - I : Maps the derivatives in D to the corresponding points in Q
-# - Wd : weights associated with derivatives. Values greater than zero indicate
-# unconstrained, values less than zero indicate constraint
-# - n : n+1 control points are used for the fit.
-# - p : the degree of the curve to fit.
-# - knotplacement : knot placement scheme ("centripital" or "chordlength")
+- Q : Data points to be approximated
+- r : there are r+1 datapoints.
+- Wq : weights of "tightness" of approximation to each data point (values greater than zero indicate unconstrained, values less than zero indicat constraint.)
+- D : optional derivatives at any of the points, Q
+- s : number of derivatives in D is s+1
+- I : Maps the derivatives in D to the corresponding points in Q
+- Wd : weights associated with derivatives. Values greater than zero indicate
+unconstrained, values less than zero indicate constraint
+- n : n+1 control points are used for the fit.
+- p : the degree of the curve to fit.
+- knotplacement : knot placement scheme ("centripital" or "chordlength")
 
-# Outputs:
+Outputs:
 
-# - U : knot vector
-# - P : control points
-# """
-# function leastsquarescurve(Q,r,n,p,ubar=[],U=[], Wq=[], D=[], s=-1, I=[], Wd=[]; knotplacement="centripetal")
+- U : knot vector
+- P : control points
+"""
+function leastsquarescurve(Q,r,n,p, ubar=[], U=[], Wq=[], D=[], s=-1, I=[], Wd=[]; knotplacement="centripetal")
 
-#     #initialize output
-#     m = n+p+1
-#     P = zeros(n+1,length(Q[1,:]))
+    #initialize output
+    m = n+p+1
+    P = zeros(n+1,length(Q[1,:]))
 
-#     #do some setting up of weights based on inputs.
-#     if isempty(Wq)
-#         Wq = ones(length(Q[:,1]))
-#         ru = length(Q[:,1]) - 1
-#         rc = -1
-#     else
-#         ru = -1
-#         rc = -1
-#         for i=1:r+1
-#             if Wq[i] > 0.0
-#                 ru += 1
-#             else
-#                 rc += 1
-#             end
-#         end
-#     end
+    #do some setting up of weights based on inputs.
+    if isempty(Wq)
+        Wq = ones(length(Q[:,1]))
+        ru = length(Q[:,1]) - 1
+        rc = -1
+    else
+        ru = -1
+        rc = -1
+        for i=1:r+1
+            if Wq[i] > 0.0
+                ru += 1
+            else
+                rc += 1
+            end
+        end
+    end
 
-#     if isempty(Wd)
-#         Wd = ones(length(Q[:,1]))
-#         I = -ones(length(Q[:,1]))
-#         su = length(Q[:,1])-1
-#         sc = -1
-#     else
-#         su = -1
-#         sc = -1
-#         for i=1:s+1
-#             if Wq[i] > 0.0
-#                 su += 1
-#             else
-#                 sc += 1
-#             end
-#         end
-#     end
+    if isempty(D)
+        Wd = ones(length(Q[:,1]))
+        I = -ones(length(Q[:,1]))
+        su = length(Q[:,1])-1
+        sc = -1
+    else
+        if isempty(Wd)
+            Wd = ones(length(Q[:,1]))
+        end
+        su = -1
+        sc = -1
+        for i=1:s+1
+            if Wd[i] > 0.0
+                su += 1
+            else
+                sc += 1
+            end
+        end
+    end
 
-#     mu = ru+su+1
-#     mc = rc+sc+1
+    mu = ru+su+1
+    mc = rc+sc+1
 
-#     if mc >= n || mc+n >= mu+1
-#         error("That's not going to work. (see NURBS eqn 9.70)")
-#     else
-#         #initialize all the local matrices
-#         N = zeros(mu+1,n+1)
-#         M = zeros(mc+1,n+1)
-#         S = zeros(mu+1)
-#         T = zeros(mc+1)
-#         A = zeros(mc+1)
-#         W = zeros(mu+1,mu+1)
-#     end
+    if mc >= n || mc+n >= mu+1
+       error("That's not going to work. (see NURBS eqn 9.70)")
+    else
+        #initialize all the local matrices
+        N = zeros(mu+1,n+1)
+        M = zeros(mc+1,n+1)
+        S = zeros(mu+1)
+        T = zeros(mc+1)
+        A = zeros(mc+1)
+        W = zeros(mu+1,mu+1)
+    end
+    println("size N: ", size(N))
+    println("size M: ", size(M))
+    println("size S: ", size(S))
+    println("size T: ", size(T))
+    println("size A: ", size(A))
+    println("size W: ", size(W))
 
-#     ##-- set up knots
-#     if isempty(U)
-#         U = zeros(m+1)
-#         ubar = computeubar(r,Q,knotplacement)
+    ##-- set up knots
+    if isempty(ubar)
+        ubar = Splines.computeubar(r,Q,knotplacement)
+    end
 
-#         if knotplacement != "centripetal" && knotplacement != "chordlength" #eqn 9.3
-#             warn("No valid knot placement scheme selected, using equidistant...")
-#             U = collect(range(0,stop=1,length=m))
-#         else
-#             #from \bar{u}_k get the knot vector
-#             d = (r+1)/(n-p+1)
-#             #from \bar{u}_k get the knot vector
-#             U[1:p+1] .= 0
-#             U[m+1-p:m+1] .= 1
-#             for j=2:n+1-p
-#                 i = Int(floor(j*d))
-#                 alpha = j*d-i
-#                 U[j+p] = (1-alpha)*ubar[i-1] + alpha*ubar[i]
-#             end
-#         end
-#     end
+    if isempty(U)
+        U = zeros(m+1)
+        if knotplacement != "centripetal" && knotplacement != "chordlength" #eqn 9.3
+            warn("No valid knot placement scheme selected, using equidistant...")
+            U = collect(range(0,stop=1,length=m))
+        else
+            #from \bar{u}_k get the knot vector
+            d = (r+1)/(n-p+1)
+            #from \bar{u}_k get the knot vector
+            U[1:p+1] .= 0
+            U[m+1-p:m+1] .= 1
+            for j=1:n-p
+                i = Int(floor(j*d))
+                # println("i: ", i)
+                alpha = j*d-i
+                # println("alpha: ", alpha)
+                U[j+p+1] = (1-alpha)*ubar[i-1] + alpha*ubar[i]
+            end
+        end
+    end
+    ##-- Set up arrays: N, W, S, T, M
 
-#     ##-- Set up arrays: N, W, S, T, M
-# #! YOU ARE HERE, BIG MATRICES ARE NOT WORKING, LOTS OF ZEROS AND NANS...
-#     for k=1:length(Q[1,:]) #do each dimension separately.
-#         j = 1
-#         mu2 = 1
-#         mc2 = 1
-#         for i=1:r
-#             println("i: ", i)
-#             span = Splines.getspanindex(n,p,ubar[i],U)
-#             dflag = 0 #derivative flag
-#             #check for derivative at point
-#             if j <= s
-#                 if i == I[j]
-#                     dflag = 1
-#                 end
-#             end
+    for k=1:length(Q[1,:]) #do each dimension separately.
+        j = 1
+        mu2 = 1
+        mc2 = 1
+        for i=1:r+1
+            span = Splines.getspanindex(n,p,ubar[i],U)
+            dflag = 0 #derivative flag
+            #check for derivative at point
+            println("j: ", j)
+            println("s: ", s)
+            if j <= s
+                println("i: ", i)
+                println("I[j]: ", I[j])
+                if i == I[j]
+                    println("TRUE")
+                    dflag = 1
+                end
+            end
 
-#             if dflag == 0 #if derivative not present
-#                 funs = Splines.basisfunctions(span+1, ubar[i], p, U)
-#             else
-#                 funs = Splines.basisfunctionsderivatives(span+1, ubar[i], p, 1, U)
-#             end
+            if dflag == 0 #if derivative not present
+                funs = Splines.basisfunctions(span+1, ubar[i], p, U)
+            else
+                # println("dflag is 1")
+                funs = Splines.basisfunctionsderivatives(span+1, ubar[i], p, 1, U)
+            end
 
-#             #if point is unconstrained
-#             if Wq[i] > 0
-#                 W[mu2,mu2] = Wq[i]
-#                 N[mu2,span+1-p:span+1] = funs
-#                 S[mu2] = W[mu2,mu2]*Q[i,k]
-#                 mu2 += 1
-#             else #if point is constrained
-#                 M[mc2,span+1-p:span+1] = funs
-#                 T[mc2] = Q[i,k]
-#                 mc2 += 1
-#             end #if unconstrained
+            #if point is unconstrained
+            println("i: ", i)
+            if Wq[i] > 0
+                println("unconstrained point")
+                println("mu2: ", mu2)
+                W[mu2,mu2] = Wq[i]
+                if length(size(funs))==1
+                    N[mu2,span+1-p:span+1] = funs
+                else
+                    N[mu2,span+1-p:span+1] = funs[1,:]
+                end
+                S[mu2] = W[mu2,mu2]*Q[i,k]
+                mu2 += 1
+            else #if point is constrained
+                println("constrained point")
+                println("mc2: ", mc2)
+                if length(size(funs))==1
+                    M[mc2,span+1-p:span+1] = funs
+                else
+                    M[mc2,span+1-p:span+1] = funs[1,:]
+                end
+                T[mc2] = Q[i,k]
+                mc2 += 1
+            end #if unconstrained
 
-#             #if derivative given for this point
-#             if dflag == 1
-#                 if Wd[j] > 0 #unconstrained derivative
-#                     W[mu2,mu2] = Wd[j]
-#                     N[mu2,span+1-p:span+1] = funs[2,:]
-#                     S[mu2] = W[mu2,mu2]*D[j]
-#                     mu2 += 1
-#                 else #constrained derivative
-#                     M[mc2,span+1-p:span+1] = funs[2,:]
-#                     T[mc2] = D[j]
-#                     mc2 += 1
-#                 end
-#                 j += 1
-#             end #if dflag
-#         end #for r
+            #if derivative given for this point
+            if dflag == 1
+                println("derivative")
+                if Wd[j] > 0 #unconstrained derivative
+                    println("unconstrained der")
+                    W[mu2,mu2] = Wd[j]
+                    N[mu2,span+1-p:span+1] = funs[2,:]
+                    S[mu2] = W[mu2,mu2]*D[j]
+                    mu2 += 1
+                else #constrained derivative
+                    println("constrained der")
+                    M[mc2,span+1-p:span+1] = funs[2,:]
+                    T[mc2] = D[j]
+                    mc2 += 1
+                end
+            end #if dflag
+            j += 1
+        end #for r
+        println("N:")
+        display(N)
+        println()
 
-#         NtransWN = N'*W*N
-#         NtransWNinv = LinearAlgebra.inv(NtransWN)
-#         NtransWS = N'*W*S
+        println("W:")
+        display(W)
+        println()
+        NtransWN = N'*W*N
+        NtransWNinv = LinearAlgebra.inv(NtransWN)
+        NtransWS = N'*W*S
 
-#         if mc < 0 #if no constraints
-#             P[:,k] = NtransWN\NtransWS
-#         else
-#             A = (M*NtransWNinv*M') \ (M*NtransWNinv*NtransWS-T)
-#             P[:,k] = NtransWN \ (NtransWS - M'*A)
-#         end
+        if mc < 0 #if no constraints
+           P[:,k] = NtransWN\NtransWS
+       else
+           A = (M*NtransWNinv*M') \ (M*NtransWNinv*NtransWS-T)
+           P[:,k] = NtransWN \ (NtransWS - M'*A)
+       end
 
-#     end #for dimension
+    end #for dimension
 
-#     return U, P
 
-# end
+
+
+    return U, P
+
+end
+
 
 # """
 #     getremovalboundcurve(n,p,U,P,u,r,s)
