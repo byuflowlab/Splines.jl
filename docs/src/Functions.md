@@ -175,10 +175,37 @@ cprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
 ```@docs
 Splines.globalcurveinterpolation(n,Q,r,p; knotplacement)
 ```
+
+```@setup
+import Splines
+Q = [0 0; 3 4; -1 4; -4 0; -4 -3]
+r = 2
+n = 4
+p = 3
+U = [0 0 0 0 28/51 1 1 1 1]
+m, U, P = Splines.globalcurveinterpolation(n,Q,r,p;knotplacement="chordlength")
+numcp,~ = size(P)
+Pw = ones(numcp,3)
+Pw[:,1]=P[:,1]
+Pw[:,2]=P[:,2]
+u = collect(range(0,stop=1,length=160+1))
+n = numcp-1
+
+Cw = zeros(length(u), length(Pw[1, :]))
+for i = 1:length(u)
+    Cw[i, :] = Splines.curvepoint(n, p, U, Pw, u[i])
+end
+x = Cw[:,1]
+z = Cw[:,2]
+plot(size=(2400,1600), titlefontsize=24, legendfontsize=24, tickfontsize=24, guidfontsize=24, linewidths = 5)
+plot!(x,z,lab="Interpolated Curve",aspectratio=:equal,xlim=(-6,8))
+scatter!(Pw[:,1],Pw[:,2],lab="Control Points")
+scatter!(Q[:,1],Q[:,2], lab="Data Points")
+savefig("globalinterp.svg")
+```
 **Example**
 ```@example
-import Splines # hide
-Q = [0 0; 3 4; -1 4; -4 0; -4 -3]
+Q = [0 0; 3 4; -1 4; -4 0; -4 -3] #Data points to be interpolated
 r = 2
 n = 4
 p = 3
@@ -186,7 +213,7 @@ U = [0 0 0 0 28/51 1 1 1 1]
 m, U, P = Splines.globalcurveinterpolation(n,Q,r,p;knotplacement="chordlength")
 ```
 
-
+![](globalinter.svg)
 
 
 
