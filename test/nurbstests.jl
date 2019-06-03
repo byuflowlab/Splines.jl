@@ -111,6 +111,33 @@ end
     @test isapprox(Qwcalcd, Qw, atol=1e-15)
 end
 
+@testset "NURBS: Knot Removal - Unique Knot" begin
+UP = [0,0,0,0,1,2,3,4,5,5,5,5]
+u = 5/2
+p = 3
+P = [0 0; 1 1; 2 0; 3 0; 4 1; 3 2; 2 2; 1 1]
+w = [1 1 1 1 1 1 1 1]
+Pw = [0 0 1; 1 1 1; 2 0 1; 3 0 1; 4 1 1; 3 2 1; 2 2 1; 1 1 1]
+np = length(P[:,1])-1
+k = 5
+s = 0
+r = 2
+
+nq, UQ, Qw = Splines.curveknotinsertion(np, p, UP, Pw, u, k, s, r)
+
+idx1 = 6
+multiplicity = 2
+numtoremove = 1
+t, Uhat, Phat = Splines.removecurveknot(nq,p,UQ,Qw,u,idx1,multiplicity,numtoremove; d=1e-6, tolcheck=true)
+
+
+
+@test nq == np+r
+@test UQ == [0,0,0,0,1,2,5/2,3,4,5,5,5,5]
+@test isapprox(Qw, Qwbyhand, atol=1e-15)
+
+end
+
 @testset "NURBS: Unweighted 1 Degree Elevation" begin
     U = [0,0,0,0,3/10,7/10,1,1,1,1]
     p = 3

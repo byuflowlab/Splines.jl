@@ -90,7 +90,7 @@ Inputs:
 - Pw : the set of weighted control points and weights before insertion
 - u : the parametric point of interest
 - k : the span index at which the knot is to be inserted.
-- s : numer of instances of the new knot alrady present in the knot vector, UP
+- s : numer of instances of the new knot already present in the knot vector, UP
 - r : number of times the new knot is inserted (it is assumed that `` r+s \\leq p `` )
 
 Outputs:
@@ -260,85 +260,88 @@ function removecurveknot(n,p,U,Pw,u,r,s,num; d=1e-6, tolcheck=true)
             minw = Phat[i,end]
         end
     end
-    # println("minw = ", minw)
-    # println("maxP = ", maxP)
+    println("minw = ", minw)
+    println("maxP = ", maxP)
     tol = d*minw/(1+maxP)
-    # println("tol = ", tol)
+    println("tol = ", tol)
     m = n+p+1
-    # println("m = ", m)
+    println("m = ", m)
     ord = p+1
-    # println("ord = ", ord)
+    println("ord = ", ord)
     fout = Int(round((2*r-s-p)/2)) #first control point output
-    # println("fout = ", fout)
+    println("fout = ", fout)
     last = r-s+1
-    # println("last = ", last)
+    println("last = ", last)
     first = r-p+1
-    # println("first = ", first)
+    println("first = ", first)
 
     #this loop is eqn 5.28
     temp=zeros(size(Phat))
     remflag = false
     for outer t = 0:num
-        # println("t = ", t)
+        println("t = ", t)
         off = first-1 #diff in index between temp and P
-        # println("off = ", off)
+        println("off = ", off)
         temp[1,:] = Phat[off,:]
-        # println("temp[1,:] = ", temp[1,:])
+        println("temp[1,:] = ", temp[1,:])
         temp[last+1-off,:] = Phat[last+1,:]
-        # println("temp[$(last+1-off),:] = ", temp[last+1-off])
+        println("temp[$(last+1-off),:] = ", temp[last+1-off])
         i = first
-        # println("i = ", i)
+        println("i = ", i)
         j = last
-        # println("j = ", j)
+        println("j = ", j)
         ii = 1+1
-        # println("ii = ", ii)
+        println("ii = ", ii)
         jj = last-off+1
-        # println("jj = ", jj)
+        println("jj = ", jj)
         remflag = false
 
         while j-i>t
-            # println("j-i>t")
+            println("j-i>t")
             #compute new control points for one removal step
             alfi = (u-Uhat[i])/(Uhat[i+ord+t]-Uhat[i])
-            # println("alfi = ", alfi)
+            println("alfi = ", alfi)
             alfj = (u-Uhat[j-t])/(Uhat[j+ord]-Uhat[j-t])
-            # println("alfj = ", alfj)
+            println("alfj = ", alfj)
             temp[ii,:] = (Phat[i,:] - (1.0-alfi)*temp[ii-1,:])/alfi
-            # println("temp[ii,:] = ", temp[ii,:])
+            println("temp[ii,:] = ", temp[ii,:])
             temp[jj,:] = (Phat[j,:]-alfj*temp[jj+1,:])/(1.0-alfj)
-            # println("temp[jj,:] = ", temp[jj,:])
+            println("temp[jj,:] = ", temp[jj,:])
             i += 1
-            # println("i = ", i)
+            println("i = ", i)
             ii += 1
-            # println("ii = ", ii)
+            println("ii = ", ii)
             j -= 1
-            # println("j = ", j)
+            println("j = ", j)
             jj -= 1
-            # println("jj = ", jj)
+            println("jj = ", jj)
         end #while
+        println("temp = ")
+        display(temp)
         if j-i < t #check if knot is removable
-            # println("j-i < t")
+            println("j-i < t ", LinearAlgebra.norm(temp[ii-1,:]-temp[jj+1,:]))
             if LinearAlgebra.norm(temp[ii-1,:]-temp[jj+1,:]) <= tol || tolcheck==false
                 remflag = true
             end
         else
             alfi = (u-Uhat[i])/(Uhat[i+ord+t]-Uhat[i])
-            # println("alfi = ", alfi)
+            println("alfi = ", alfi)
             if LinearAlgebra.norm(Phat[i,:]-(alfi*temp[ii+t+1,:]+(1.0-alfi)*temp[ii-1,:])) <= tol || tolcheck==false
                 remflag = true
             end
         end
         # println(remflag)
         if remflag == false #cannot remove any more knots
+            println("remflag == false")
             break #get out of for loop
         else
             #successful removal. save new cont. pts
             i = first
-            # println("i = ", i)
+            println("i = ", i)
             j = last
-            # println("j = ", j)
+            println("j = ", j)
             while j-i > t
-                # println("j-i > t")
+                println("j-i > t")
                 Phat[i,:] = temp[i-off,:]
                 Phat[j,:] = temp[j-off,:]
                 i += 1
@@ -351,7 +354,7 @@ function removecurveknot(n,p,U,Pw,u,r,s,num; d=1e-6, tolcheck=true)
 
     #if no knots removed, end
     if remflag==false
-        # println("No Knots Removed.")
+        println("No Knots Removed.")
         return 0, Uhat, Phat
     end
 
