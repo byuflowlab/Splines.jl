@@ -476,7 +476,7 @@ end
 
 
 """
-    leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=[], I=[], Wd=[]; knotplacement)
+    leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=[], I=[], Wd=[]; knotplacement) FIX ME
 
 Compute the weighted, constrained, least squares curve fit. (NURBS A9.6)
 
@@ -492,7 +492,7 @@ Inputs:
 unconstrained, values less than zero indicate constraint
 - n : n+1 control points are used for the fit.
 - p : the degree of the curve to fit.
-- knotplacement : knot placement scheme ("centripital" or "chordlength")
+- knotplacement : knot placement scheme ("centripetal" or "chordlength")
 
 Outputs:
 
@@ -506,44 +506,66 @@ function leastsquarescurve(Q,r,n,p, ubar=[], U=[], Wq=[], D=[], s=-1, I=[], Wd=[
     P = zeros(n+1,length(Q[1,:]))
 
     #do some setting up of weights based on inputs.
-    if isempty(Wq)
-        Wq = ones(length(Q[:,1]))
-        ru = length(Q[:,1]) - 1
-        rc = -1
-    else
-        ru = -1
-        rc = -1
-        for i=1:r+1
-            if Wq[i] > 0.0
-                ru += 1
-            else
-                rc += 1
-            end
+    #CHANGED I simplified this to the algorithm's way..
+    ru = -1
+    rc = -1
+    for i=1:r+1
+        if Wq[i] > 0.0
+            ru += 1
+        else
+            rc += 1
+        end
+    end
+    # if isempty(Wq)
+    #     Wq = ones(length(Q[:,1]))
+    #     ru = length(Q[:,1]) - 1
+    #     rc = -1
+    # else
+    #     ru = -1
+    #     rc = -1
+    #     for i=1:r+1
+    #         if Wq[i] > 0.0
+    #             ru += 1
+    #         else
+    #             rc += 1
+    #         end
+    #     end
+    # end
+    #CHANGED I believe that the book has these at different lengths
+    su = -1
+    sc = -1
+    for i=1:s+1
+        if Wd[i] > 0.0
+            su += 1
+        else
+            sc += 1
         end
     end
 
-    if isempty(D)
-        Wd = ones(length(Q[:,1]))
-        I = -ones(length(Q[:,1]))
-        su = length(Q[:,1])-1
-        sc = -1
-    else
-        if isempty(Wd)
-            Wd = ones(length(Q[:,1]))
-        end
-        su = -1
-        sc = -1
-        for i=1:s+1
-            if Wd[i] > 0.0
-                su += 1
-            else
-                sc += 1
-            end
-        end
-    end
+    # if isempty(D)
+    #     Wd = ones(length(Q[:,1]))
+    #     I = -ones(length(Q[:,1]))
+    #     su = length(Q[:,1])-1
+    #     sc = -1
+    # else
+    #     if isempty(Wd)
+    #         Wd = ones(length(Q[:,1]))
+    #     end
+    #     su = -1
+    #     sc = -1
+    #     for i=1:s+1
+    #         if Wd[i] > 0.0
+    #             su += 1
+    #         else
+    #             sc += 1
+    #         end
+    #     end
+    # end
 
     mu = ru+su+1
     mc = rc+sc+1
+    # println("mu: ", mu)
+    # println("mc: ", mc)
 
     if mc >= n || mc+n >= mu+1
        error("That's not going to work. (see NURBS eqn 9.70)")
@@ -556,12 +578,12 @@ function leastsquarescurve(Q,r,n,p, ubar=[], U=[], Wq=[], D=[], s=-1, I=[], Wd=[
         A = zeros(mc+1)
         W = zeros(mu+1,mu+1)
     end
-    println("size N: ", size(N))
-    println("size M: ", size(M))
-    println("size S: ", size(S))
-    println("size T: ", size(T))
-    println("size A: ", size(A))
-    println("size W: ", size(W))
+    # println("size N: ", size(N))
+    # println("size M: ", size(M))
+    # println("size S: ", size(S))
+    # println("size T: ", size(T))
+    # println("size A: ", size(A))
+    # println("size W: ", size(W))
 
     ##-- set up knots
     if isempty(ubar)
@@ -590,25 +612,29 @@ function leastsquarescurve(Q,r,n,p, ubar=[], U=[], Wq=[], D=[], s=-1, I=[], Wd=[
     end
     ##-- Set up arrays: N, W, S, T, M
 
+#TODO: Fix the consistency of r, length(Q[1,:]). They should refer to the same thing.
     for k=1:length(Q[1,:]) #do each dimension separately.
         j = 1
         mu2 = 1
         mc2 = 1
+        #QUESTION: Should we wipe W, N, etc each iteration?
+        println("Dimension: ", k)
         for i=1:r+1
             span = Splines.getspanindex(n,p,ubar[i],U)
             dflag = 0 #derivative flag
             #check for derivative at point
-            println("j: ", j)
-            println("s: ", s)
-            if j <= s
-                println("i: ", i)
-                println("I[j]: ", I[j])
+            # println("j: ", j)
+            # println("s: ", s)
+            #CHANGED from s to s+1. This fixes the singularity exception calculating A.
+            if j <= s+1
+                # println("i: ", i)
+                # println("I[j]: ", I[j])
                 if i == I[j]
-                    println("TRUE")
+                    # println("TRUE")
                     dflag = 1
                 end
             end
-
+            #QUESTION: Why are we increasing the span here?
             if dflag == 0 #if derivative not present
                 funs = Splines.basisfunctions(span+1, ubar[i], p, U)
             else
@@ -617,10 +643,10 @@ function leastsquarescurve(Q,r,n,p, ubar=[], U=[], Wq=[], D=[], s=-1, I=[], Wd=[
             end
 
             #if point is unconstrained
-            println("i: ", i)
+            # println("i: ", i)
             if Wq[i] > 0
-                println("unconstrained point")
-                println("mu2: ", mu2)
+                # println("unconstrained point")
+                # println("mu2: ", mu2)
                 W[mu2,mu2] = Wq[i]
                 if length(size(funs))==1
                     N[mu2,span+1-p:span+1] = funs
@@ -630,57 +656,80 @@ function leastsquarescurve(Q,r,n,p, ubar=[], U=[], Wq=[], D=[], s=-1, I=[], Wd=[
                 S[mu2] = W[mu2,mu2]*Q[i,k]
                 mu2 += 1
             else #if point is constrained
-                println("constrained point")
-                println("mc2: ", mc2)
+                # println("constrained point")
+                # println("mc2: ", mc2)
                 if length(size(funs))==1
                     M[mc2,span+1-p:span+1] = funs
                 else
                     M[mc2,span+1-p:span+1] = funs[1,:]
                 end
+                println(M)
+                println("Data Point: ", i)
                 T[mc2] = Q[i,k]
                 mc2 += 1
             end #if unconstrained
 
             #if derivative given for this point
             if dflag == 1
-                println("derivative")
+                # println("derivative")
                 if Wd[j] > 0 #unconstrained derivative
-                    println("unconstrained der")
+                    # println("unconstrained der")
+                    #QUESTION: Should the indexing do a single point, a whole row, or a range?
                     W[mu2,mu2] = Wd[j]
                     N[mu2,span+1-p:span+1] = funs[2,:]
                     S[mu2] = W[mu2,mu2]*D[j]
                     mu2 += 1
                 else #constrained derivative
-                    println("constrained der")
+                    # println("constrained der")
+                    # println("funs: ", funs[2,:])
                     M[mc2,span+1-p:span+1] = funs[2,:]
                     T[mc2] = D[j]
                     mc2 += 1
                 end
+                #CHANGED
+                j += 1
             end #if dflag
-            j += 1
         end #for r
-        println("N:")
-        display(N)
-        println()
-
-        println("W:")
-        display(W)
-        println()
+        # println("N:")
+        # display(N)
+        # println()
+        #
+        # println("W:")
+        # display(W)
+        # println()
         NtransWN = N'*W*N
         NtransWNinv = LinearAlgebra.inv(NtransWN)
         NtransWS = N'*W*S
+        #
+        # println("mc2: ", mc2)
+        # println("N: ")
+        # display(N)
+        # println("W: ")
+        # display(W)
+        # println("S: ")
+        # display(S)
+        # println("M: ")
+        # display(M)
+        # println("T: ")
+        # display(size(T))
+        # println("NtransWS: ", size(NtransWS))
+        # println("NtransWN: ", size(NtransWN))
+        # println("M*NtransWNinv*M': ", size(M*NtransWNinv*M'))
+        # println("M*NtransWNinv*NtransWS-T: ", size(M*NtransWNinv*NtransWS-T))
+
+        # println("M*NtransWNinv*M': ")
+        # display(M*NtransWNinv*M')
+        # println("M*NtransWNinv*NtransWS-T: ")
+        # display(M*NtransWNinv*NtransWS-T)
 
         if mc < 0 #if no constraints
            P[:,k] = NtransWN\NtransWS
-       else
+        else
            A = (M*NtransWNinv*M') \ (M*NtransWNinv*NtransWS-T)
            P[:,k] = NtransWN \ (NtransWS - M'*A)
-       end
+        end
 
     end #for dimension
-
-
-
 
     return U, P
 
