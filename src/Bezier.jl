@@ -12,6 +12,33 @@ function binomialcoeff(n, i)
 end
 
 """
+    powerbasiscurvepoint(a, n, u0) [A1.1] {Horner1}
+Compute point on power basis curve.
+Compute the "y" value of a powerbasis function.
+
+Input:
+    a - Doesn't explicitly say...
+        ai are vectors (xi, yi, zi)
+    n - degree
+    u0 - Percentage of curve.
+Ouput:
+    C - point on power basis curve
+Note: Wikipedia - Horner's Method - says that this is a way to represent a polynomial,
+where a is a vector of the coefficients multiplied by x^n from n=0 to n=n. This vector
+starts with a_0 and goes to a_n.
+"""
+function powerbasiscurvepoint(a, n, u0)
+    #Store a_n in C
+    C = a[n+1]
+    #Iterate through and sum all of the polynomial up
+    for i=n:-1:1
+        C = C*u0 + a[i]
+    end
+    return C
+end
+
+
+"""
     bernsteincoeff(u, n, i)
 
 Calculate Bernstein Coefficient (Bezier Basis Function) defined as:
