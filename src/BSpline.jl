@@ -1,5 +1,5 @@
 """
-    getspanindex(n, p, u, U)
+    getspanindex(n, p, u, U) [A2.1]
 
 Complete binary search to find span index of vector, U, in which the parametric point, u, lies. (NURBS A2.1)
 """
@@ -33,7 +33,7 @@ function getspanindex(n, p, u, U)
 end
 
 """
-    basisFunctions(i, u, p, U)
+    basisfunctions(i, u, p, U)
 
 Calculate the non-vanishing basis functions of the B-Spline of order p, defined by knots U at parametric point, ``u``.
 
@@ -473,7 +473,71 @@ function globalcurveinterpolation(n,Q,r,p; knotplacement="centripetal")
 
     return m, U, P
 end
+"""
+    surfacepoint(n, p, U, m, q, V, P, u, v) [A3.5]
+Compute the z component of a surface from u,v.
 
+Inputs:
+    n - number of u control points
+    p - degree of u direction curve
+    U - u direction knot vector
+    m - number of v control points
+    q - degree of v direction curve
+    V - v knot vector
+    P - Control points matrix (n)x(m)? Possibly different.
+        Is P a 3D matrix?
+    u - u coordinate
+    v - v coordinate
+Outputs:
+    S - Point on surface
+"""
+
+function surfacepoint(n, p, U, m, q, V, P, u, v)
+    #MUST obey these identities.
+    # r = n + p + 1 # U has r + 1 knots
+    # s = m + q + 1 # V has s + 1 knots
+    r = length(U)-1
+    s = length(V)-1
+    if r!= n + p + 1
+        error("U Knot and control point length not consistent with degree.")
+    end
+    if s!= m + q + 1
+        error("V Knot and control point length not consistent with degree.")
+    end
+
+    #TODO: Calculate r, s, n, m based on inputs.
+
+    #QUESTION: Do I need to adjust the span?
+    #Find Span and basis of u and v directions
+    uspan = Splines.getspanindex(n, p, u, U)
+    Nu = Splines.basisfunctions(uspan+1, u, p, U)
+    vspan = Splines.getspanindex(m, q, v, V)
+    Nv = Splines.basisfunctions(vspan+1, v, q, V)
+    uind = uspan-p #TODO: needs currently goes to 0. However,
+    # we add k below, so it may not be a problem.
+    S = 0.0
+    # println("uspan: ", uspan)
+    # println("Nu: ")
+    # display(Nu)
+    # println("vspan: ", vspan)
+    # println("Nv: ")
+    # display(Nv)
+    # println("uind: ", uind)
+    #QUESTION: Am I going to have to iterate through dimensions?
+    for l=1:q+1
+        temp = 0.0
+        vind = vspan-q+l #QUESTION: I added a -1, but I don't know if that's the problem...
+        # println("vind: ", vind)
+        # println("l: ", l)
+        for k=1:p+1
+            temp = temp + Nu[k]*P[uind+k, vind]
+            # println("temp: ", temp)
+            # println("k: ", k)
+        end
+        S = S + Nv[l]*temp
+    end
+    return S
+end
 
 # """
 #     leastsquarescurve(Q,r,n,p, Wq=[], D=[], s=[], I=[], Wd=[]; knotplacement)
