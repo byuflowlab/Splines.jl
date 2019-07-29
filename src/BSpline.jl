@@ -473,15 +473,16 @@ function globalcurveinterpolation(n,Q,r,p; knotplacement="centripetal")
 
     return m, U, P
 end
+
 """
     surfacepoint(n, p, U, m, q, V, P, u, v) [A3.5]
 Compute the z component of a surface from u,v.
 
 Inputs:
-    n - number of u control points
+    n - number of u control points - 1
     p - degree of u direction curve
     U - u direction knot vector
-    m - number of v control points
+    m - number of v control points - 1
     q - degree of v direction curve
     V - v knot vector
     P - Control points matrix (n)x(m)? Possibly different.
@@ -496,6 +497,8 @@ function surfacepoint(n, p, U, m, q, V, P, u, v)
     #MUST obey these identities.
     # r = n + p + 1 # U has r + 1 knots
     # s = m + q + 1 # V has s + 1 knots
+    # variation of m = n + p + 1, where
+    # p = degree, n+1 = number of control points, m+1 = number of knots
     r = length(U)-1
     s = length(V)-1
     if r!= n + p + 1
@@ -507,8 +510,8 @@ function surfacepoint(n, p, U, m, q, V, P, u, v)
 
     #TODO: Calculate r, s, n, m based on inputs.
 
-    #QUESTION: Do I need to adjust the span?
     #Find Span and basis of u and v directions
+    #If I do not add one to the span, then I get out NaN.
     uspan = Splines.getspanindex(n, p, u, U)
     Nu = Splines.basisfunctions(uspan+1, u, p, U)
     vspan = Splines.getspanindex(m, q, v, V)
@@ -517,6 +520,7 @@ function surfacepoint(n, p, U, m, q, V, P, u, v)
     # we add k below, so it may not be a problem.
     S = 0.0
     # println("uspan: ", uspan)
+    # println("uind: ", uind)
     # println("Nu: ")
     # display(Nu)
     # println("vspan: ", vspan)
@@ -524,12 +528,12 @@ function surfacepoint(n, p, U, m, q, V, P, u, v)
     # display(Nv)
     # println("uind: ", uind)
     #QUESTION: Am I going to have to iterate through dimensions?
-    for l=1:q+1
+    for l=1:q+1 #CURRENTLY 1:3
         temp = 0.0
-        vind = vspan-q+l #QUESTION: I added a -1, but I don't know if that's the problem...
+        vind = vspan-q+l
         # println("vind: ", vind)
         # println("l: ", l)
-        for k=1:p+1
+        for k=1:p+1 #CURRENTLY 1:3
             temp = temp + Nu[k]*P[uind+k, vind]
             # println("temp: ", temp)
             # println("k: ", k)
