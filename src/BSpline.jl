@@ -1092,7 +1092,7 @@ Input:
 
 Output:
     C - Combined vector
-    C_added - The elements of B added to A to create C. 
+    C_added - The elements of B added to A to create C.
 """
 function combineknotvector(A, B)
     uni = unique(A)
@@ -1135,6 +1135,83 @@ function combineknotvector(A, B)
     C = sort(C)
     return C, C_added
 end
+
+"""
+    surfacederivs(n, p, U, m, q, V, P, u, v; d=1) [A 3.6]
+Computes the surface derivatives of a basis surface.
+
+Inputs:
+    n - number of u control points - 1
+    p - degree of u direction curve
+    U - U direction knots
+    m - number of v control points - 1
+    q - degree of v direction curve
+    V - V direction knots
+    P - Control Net
+    u - u parametric point of interest
+    v - v parametric point of interest
+    d - order of derivative
+
+Outputs:
+    SKL[k][l] - derivative of S(u,v) with respect to u, k-1 times and v, l-1 times (if using julia indexing notation.)
+Notes:
+    - Adam Cardoza 8/16/19
+"""
+function surfacederivs(n, p, U, m, q, V, P, u, v; d=1)
+    #TODO: sort out indexing issues
+        # I have to be careful that the indexing doesn't screw up how the derivatives are represented.
+        # I'm not sure if the way that I'm fixing the indexing will do what we want it to do..
+        # What if I just revert to the same numbers in the algorithm, then add one to each time it indexes.
+    #TODO: Sort out function call names
+    #TODO: Sort out syntax
+    # println("Running diagnostics")
+
+    du = min(d,p)
+    #if the order of the derivative is higher than the order of the curve, then this for loop will kick in, which makes sense, because if you take derivatives past the order of a curve, then it goes to zero.
+    for k=p+1:d                 #Index checked
+        for l=0:d-k               #Index checked
+            SKL[k+1,l+1] = 0.0;     #Index checked
+        end
+    end
+    dv = min(d,q)
+    # println("dv: ", dv)
+    for l=q+1:d
+        for k=0:d-l
+            SKL[k+1,l+1] = 0.0
+        end
+    end
+    uspan = Splines.getspanindex(n,p,u,U)
+    #CHANGED: I added one to uspan and vspan.
+    Nu = Splines.basisfunctionsderivatives(uspan+1, u, p, du, U)
+    vspan = Splines.getspanindex(m,q,v,V)
+    Nv = Splines.basisfunctionsderivatives(vspan+1, v, q, dv, V)
+    # println("uspan: ", uspan)
+    # println("vspan: ", vspan)
+    # println("Nu: ", Nu)
+    # println("Nv: ", Nv)
+    temp = zeros(q+1)
+    SKL = zeros(d+1,d+1)
+    for k=0:du
+        for s=0:q
+            temp[s+1] = 0.0 #I think this line may be useless now.
+            for r=0:p
+                temp[s+1] = temp[s+1] + Nu[k+1,r+1]*(P[uspan-p+r+1,vspan-q+s+1])
+                #QUESTION: Above, isn't that a scalar, plus a scalar times a vector? Or do they intend for the control net to be a net of scalars like it is in surface point. Because that would be a problem.
+            end
+        end
+        dd = min(d-k, dv) #I think this is how many derivative with respect to v?
+        # println("dd: ", dd)
+        for l=0:dd   #So apparently it isn't suppose to iterate through only some of the times. Because SKL changes way too much.
+            SKL[k+1,l+1] = 0.0 # I don't think that this line really does anything.
+            for s=0:q
+                SKL[k+1,l+1] = SKL[k+1,l+1] + Nv[l+1,s+1]*temp[s+1]
+                # println("SKL: ", SKL)
+            end
+        end
+    end
+    return SKL
+end
+
 
 # """
 #     globalcurveapproximation(m,Q,p,E; knotplacement)
