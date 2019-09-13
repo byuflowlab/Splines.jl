@@ -485,8 +485,7 @@ Inputs:
     m - number of v control points - 1
     q - degree of v direction curve
     V - v knot vector
-    P - Control points matrix (n)x(m)? Possibly different.
-        Is P a 3D matrix?
+    P - Control points matrix (n)x(m)
     u - u coordinate
     v - v coordinate
 Outputs:
@@ -1082,6 +1081,60 @@ function projectpoints(n,p,U,P,Q; eps1=eps(),eps2=eps(),ncheckvals=1000) #TODO c
 
 end
 
+"""
+combineknotvector(A,B)
+
+Combine two vectors while preserving multiplicity and uniqueness.
+
+Input:
+    A - First vector to be combined
+    B - Second vector to be combined
+
+Output:
+    C - Combined vector
+    C_added - The elements of B added to A to create C. 
+"""
+function combineknotvector(A, B)
+    uni = unique(A)
+    cnt = zeros(length(uni))
+    for i=1:length(uni)
+        cnt[i]=count(j->(j==uni[i]),A)
+    end
+
+    uni2 = unique(B)
+    cnt2 = zeros(length(uni2))
+    for k=1:length(uni2)
+        cnt2[k]=count(l->(l==uni2[k]),B)
+    end
+
+    C = vec(copy(A))
+    C_added = vec([])
+    for i=1:length(uni2)
+        if any(x->x==uni2[i],uni) #tells me if a value in B is in A
+            #Find index of uni2[i] in uni
+            idx = findall(x->x==uni2[i],uni)
+            temp = copy(cnt[idx[1]])
+            #add more of uni2 to C until we have cnt2 of uni2
+            #If there is more of cnt then cnt2, then it will skip the while loop
+            #if there is more of cnt2, then cnt, then it will iterate through adding
+            #uni2 to C until there are cnt2 of them.
+            while cnt2[i]>temp
+                push!(C_added,uni2[i])
+                temp = temp + 1
+            end
+        else
+            #Add cnt2 of uni2 to C
+            for j=1:cnt2[i]
+                push!(C_added,uni2[i])
+            end
+        end
+    end
+    for k=1:length(C_added)
+        push!(C,C_added[k])
+    end
+    C = sort(C)
+    return C, C_added
+end
 
 # """
 #     globalcurveapproximation(m,Q,p,E; knotplacement)

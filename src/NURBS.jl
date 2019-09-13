@@ -28,6 +28,9 @@ function curvepoint(n, p, U, Pw, u)
     N = basisfunctions(span+1, u, p, U)
     Cw = zeros(length(Pw[1,:]))
     for j = 0:p
+        # println("j: ", j)
+        # println("span: ", span)
+        # println("p: ", p)
         Cw .+= N[j+1]*Pw[span-p+j+1, :]
     end
 
@@ -772,3 +775,61 @@ function nurbsbasis(u,p,d,U,w)
     return R, dR
 end
 
+"""
+ruledsurfacepoint()
+    Uses linear interpolation to find a point on a surface between two NURBS curves
+Input:
+    Pw1 - Weighted control points of curve 1
+    Pw2 - weighted control points of curve 2
+    U - knots of curves
+    degree - degree of curve (higher degree as found in ruledsurface)
+    D - Distance vector from beginning of curve 1 to beginning of curve 2
+    u - parameter value along the curve (must be in knot range)
+    d - distance from curve 1 (percentage, decimal form)
+    alignment - a vector of rotation angles for curve 2
+Output:
+    xyz - A vector of the x, y and z components of the calculated points
+Notes: Not in the NURBS book, this is a creation of Adam Cardoza.
+"""
+function ruledsurfacepoint(Pw1, Pw2, U, degree, D, u, d; alignment = [0 0 0])
+
+    #Create xyz arrays
+    xyz1 = zeros(3)
+    xyz2 = zeros(3)
+    xyz3 = zeros(3)
+
+    #Calculate the xyz of the curves. (using u)
+    n1 = length(Pw1[:,1])-1
+    n2 = length(Pw2[:,1])-1
+    xz1 = Splines.curvepoint(n1, degree, U, Pw1, u)
+    xz2 = Splines.curvepoint(n2, degree, U, Pw2, u)
+
+    xyz1 = [xz1[1] 0 xz1[2]]
+    xyz2 = [xz2[1]; 0; xz2[2]]
+
+    #Calculate rotation Matrix from A vector
+    Rx = [1 0 0; 0 cosd(A[1]) -sind(A[1]); 0 sind(A[1]) cosd(A[1])]
+    Ry = [cosd(A[2]) 0 sind(A[2]); 0 1 0; -sind(A[2]) 0 cosd(A[2])]
+    Rz = [cosd(A[3]) -sind(A[3]) 0; sind(A[3]) cosd(A[3]) 0; 0 0 1]
+    rot = Rx*Ry*Rz
+
+    #rotate vector 2
+    trans = rot*xyz2
+    xyz2 = [trans[1] trans[2] trans[3]]
+
+    #Add 3D to curves
+    if length(D) != 3
+        error("D vector incorrect length.")
+    end
+    xyz2 = xyz2 + D
+
+    #Find vector from xyz1 to xyz2
+    v1to2 = xyz2 - xyz1
+    # println(v1to2)
+    #use d to interpolate between xyz1 and xyz2
+    v1to3 = d.*v1to2
+    # println(v1to2)
+    #reported point is xyz1+(newvector*d)
+    xyz3 = xyz1 + v1to3
+    return xyz3
+end
