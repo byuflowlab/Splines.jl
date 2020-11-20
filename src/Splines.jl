@@ -1,9 +1,15 @@
 module Splines
 
-import LinearAlgebra
+using LinearAlgebra: norm
+using OffsetArrays
+onebased = OffsetArrays.no_offset_view
 
-include("Bezier.jl")
-include("BSpline.jl")
-include("NURBS.jl")
+include("bezier.jl")
+
+export BSpline, curvepoint, curvederivatives, curvederivativecontrolpoints
+export globalcurveinterpolation, leastsquarescurve
+include("bspline.jl")
+
+include("nurbs.jl")
 
 end # module
