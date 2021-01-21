@@ -1,3 +1,5 @@
+using FLOWMath: linear
+
 @testset "B-Spline: Find Span Index Tests" begin
     U = [0,0,0,1,2,3,4,4,5,5,5]
     u = 5/2
@@ -29,6 +31,7 @@ end #Find Span Tests
     @test bases[1] == 6/8
     @test bases[2] == 1/8
     
+    n = 2
     derivatives = Splines.basisfunctionsderivatives(span, p, U, u, n)
     
     @test derivatives[0, 0] == 1/8
@@ -53,7 +56,7 @@ end #Basis Functions Tests
     bsp = BSpline(p, U, P)
 
     ders = Splines.curvederivatives(bsp, u, d)
-    @test -1/2*P[3] + 1/2*P[5] == ders[2]
+    @test -1/2*P[3] + 1/2*P[5] == ders[1]
 
 
     p = 3
@@ -74,12 +77,12 @@ end #Basis Functions Tests
 
     cp = [15/2*(P[2] - P[1]), 5*(P[3] - P[2]), 5*(P[4] - P[3]), 5*(P[5] - P[4]), 15/2*(P[6] - P[5]), 15/2*(P[7] - P[6])]
 
-    @test PK[2, 1] == cp[1, 1]
-    @test PK[2, 2] == cp[2, 1]
-    @test PK[2, 3] == cp[3, 1]
-    @test PK[2, 4] == cp[4, 1]
-    @test PK[2, 5] == cp[5, 1]
-    @test PK[2, 6] == cp[6, 1]
+    @test PK[1, 1] == cp[1]
+    @test PK[1, 2] == cp[2]
+    @test PK[1, 3] == cp[3]
+    @test PK[1, 4] == cp[4]
+    @test PK[1, 5] == cp[5]
+    @test PK[1, 6] == cp[6]
 end
 
 @testset "B-Spline: Interpolation Tests" begin
@@ -348,7 +351,6 @@ for i = 1:100
 end
 
 # linearly interpolate onto same x values so we can compare
-using FLOWMath: linear
 
 idx = findfirst(y1 .> 0)
 xu1 = x1[idx:end]

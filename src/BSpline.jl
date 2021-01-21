@@ -1,4 +1,13 @@
+"""
+    BSpline(degree, knots, ctrlpts)
 
+Construct a b-spline object
+
+# Arguments
+- `deg::Integer`: degree
+- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1) 
+- `ctrlpts::Vector{Vector{Float64}}`:: control points.  outer index is number of control points, inner index of dimensionality of point.
+"""
 struct BSpline{TF, TI}
     degree::TI
     knots::Vector{TF}
@@ -231,7 +240,7 @@ Evaluate point on B-spline curve (NURBS, A3.1)
 # Returns
 - `C::Vector{Float}`: point in ND space
 """
-function curvepoint(bspline, u)
+function curvepoint(bspline::BSpline, u)
     
     P = OffsetArray(bspline.ctrlpts, 0:length(bspline.ctrlpts)-1)
     p = bspline.degree
@@ -256,12 +265,12 @@ Compute a curve point and its derivatives up do the dth derivative at parametric
 # Arguments
 - `bspline::BSpline: bspline object`
 - `u::Float`: point on spline to evaluate at
-- `d::Float`: derivative order (0 ≤ k ≦ d)
+- `d::Float`: derivative order (0 ≤ k ≤ d)
 
 # Returns
-- `CK::Vector{Vector{Float}}`
+- `CK::Vector{Vector{Float}}`.  where CK[0] is the point, CK[1] the first derivative, and so on.
 """
-function curvederivatives(bspline, u, d)
+function curvederivatives(bspline::BSpline, u, d)
     p = bspline.degree
     P = OffsetArray(bspline.ctrlpts, 0:length(bspline.ctrlpts)-1)
 
@@ -284,7 +293,7 @@ function curvederivatives(bspline, u, d)
         end
     end
 
-    return onebased(CK)
+    return CK  #onebased(CK)
 end
 
 """
@@ -313,7 +322,7 @@ with
 - `d::Float`: derivative order (0 ≤ k ≦ d)
 
 # Returns
-- `PK::Matrix{Vector{Float}}`: PK[i, j] is the (i-1)th derivative of the jth control point
+- `PK::Matrix{Vector{Float}}`: PK[i, j] is the ith derivative of the jth control point
 """
 function curvederivativecontrolpoints(bspline, r1, r2, d)
     p = bspline.degree
@@ -343,7 +352,7 @@ function curvederivativecontrolpoints(bspline, r1, r2, d)
         end
     end
 
-    return onebased(PK)
+    return OffsetArray(PK, 0:d, 1:r+1)
 end
 
 
