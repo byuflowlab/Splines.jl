@@ -1,20 +1,17 @@
 using Documenter, Splines
 
 makedocs(
-    root    = ".",
-    source  = "./src",
-    build   = "./build",
-    authors = "Judd Mehr",
-    sitename = "Splines.jl",
+    modules = [Splines],
+    format = Documenter.HTML(),
     pages = ["Home" => "index.md",
              "Functions" => "Functions.md",
              "About" => "license.md"]
+    ],
+    repo="https://github.com/byuflowlab/Splines.jl/blob/{commit}{path}#L{line}",
+    sitename="Splines.jl",
+    authors="Judd Mehr <juddmehr@gmail.com>, Andrew Ning <aning@byu.edu>",
 )
 
 deploydocs(
-    repo   = "github.com/byuflowlab/Splines.jl",
-    root   = ".",
-    target = "./build",
-    branch = "gh-pages",
-    devbranch = "master",
+    repo = "github.com/byuflowlab/Splies.jl.git"
 )
