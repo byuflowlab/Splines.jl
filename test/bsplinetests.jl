@@ -1,21 +1,22 @@
+using FLOWMath: linear
+
 @testset "B-Spline: Find Span Index Tests" begin
     U = [0,0,0,1,2,3,4,4,5,5,5]
     u = 5/2
     p = 2
-    n = length(U)-p-1
     i = 4
 
-    span = Splines.getspanindex(n,p,u,U)
+    span = Splines.getspanindex(p, U, u)
     @test span == i
 
     u = 5
-    i = 8
-    span = Splines.getspanindex(n,p,u,U)
+    i = 7
+    span = Splines.getspanindex(p, U, u)
     @test span == i
 
     u = 0
     i = 2
-    span = Splines.getspanindex(n,p,u,U)
+    span = Splines.getspanindex(p, U, u)
     @test span == i
 
 end #Find Span Tests
@@ -24,75 +25,77 @@ end #Find Span Tests
     U = [0,0,0,1,2,3,4,4,5,5,5]
     u = 5/2
     p = 2
-    i = 5
-    n = p
-    bases1 = Splines.basisfunctions(i,u,p,U)
-    # println("bases: ", bases1)
-    @test [1/8,6/8,1/8] == bases1
-    derivatives = Splines.basisfunctionsderivatives(i,u,p,n,U)
-    # println("derivatives: ")
-    # display(derivatives)
-    # println()
-    # println("actual:")
-    # display([1/8 6/8 1/8; -1/2 0 1/2; 1 -2 1])
-    # println()
-    @test [1/8, 6/8, 1/8] == derivatives[1,:]
-    @test [-1/2, 1.0] == derivatives[2:3,1]
-    @test [0.0, -2.0] == derivatives[2:3,2]
-    @test [1/2, 1.0] == derivatives[2:3,3]
+    span = Splines.getspanindex(p, U, u)
+    bases = Splines.basisfunctions(span, p, U, u)
+    @test bases[0] == 1/8
+    @test bases[1] == 6/8
+    @test bases[2] == 1/8
+    
+    n = 2
+    derivatives = Splines.basisfunctionsderivatives(span, p, U, u, n)
+    
+    @test derivatives[0, 0] == 1/8
+    @test derivatives[0, 1] == 6/8
+    @test derivatives[0, 2] == 1/8
+    @test derivatives[1, 0] == -1/2
+    @test derivatives[1, 1] == 0.0
+    @test derivatives[1, 2] == 1/2
+    @test derivatives[2, 0] == 1.0
+    @test derivatives[2, 1] == -2.0
+    @test derivatives[2, 2] == 1.0
 
 end #Basis Functions Tests
 
 @testset "B-Spline: Curve Tests" begin
-    U = [0,0,0,1,2,3,4,4,5,5,5]
+    U = [0,0,0,1,2,3,4,4,5,5,5.0]
     u = 5/2
     p = 2
-    n = length(U)-p-1
-    P = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]
+    P = [[0.0, 0], [1/2, 1/2], [1.0, 0], [3/2, 1/2], [2.0, 0], [5/2, 1/2], [3.0, 0]]
     d = 1
-    curveDerivatives = Splines.curvederivatives1(n, p, U, P, u, d)
-    # println("curveDerivatives")
-    # display(curveDerivatives)
-    # println()
-    # println("actual")
-    # display(-1/2*P[3,:] + 1/2*P[5,:])
-    # println()
-    @test -1/2*P[3,:] + 1/2*P[5,:] == curveDerivatives[2,:]
+
+    bsp = BSpline(p, U, P)
+
+    ders = Splines.curvederivatives(bsp, u, d)
+    @test -1/2*P[3] + 1/2*P[5] == ders[1]
 
 
-    U = [0,0,0,0,2/5,3/5,3/5,1,1,1,1]
-    u = 1/2
-    i = 4
-    d = 1
     p = 3
-    P = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]
-    n = length(P[:,1])-1
-    r1 = 0
-    r2 = n
-    cprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
+    U = [0,0,0,0,2/5,3/5,3/5,1,1,1,1]
+    P = [[0.0, 0], [1/2, 1/2], [1.0, 0], [3/2, 1/2], [2.0, 0], [5/2, 1/2], [3.0, 0]]
+    bsp = BSpline(p, U, P)
+    
+    # u = 1/2
+    # i = 4
+    # P = [0 0; 1/2 1/2; 1 0; 3/2 1/2; 2 0; 5/2 1/2; 3 0]
+    # n = length(P[:,1])-1
+    r1 = 1
+    r2 = length(P)
+    d = 1
+    # cprime = Splines.curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
 
-    cp = [15/2*(P[2,:] - P[1,:]), 5*(P[3,:] - P[2,:]), 5*(P[4,:] - P[3,:]), 5*(P[5,:] - P[4,:]), 15/2*(P[6,:] - P[5,:]), 15/2*(P[7,:] - P[6,:])]
+    PK = curvederivativecontrolpoints(bsp, r1, r2, d)
 
-    @test cprime[2,:,1] == cp[1,1]
-    @test cprime[2,:,2] == cp[2,1]
-    @test cprime[2,:,3] == cp[3,1]
-    @test cprime[2,:,4] == cp[4,1]
-    @test cprime[2,:,5] == cp[5,1]
-    @test cprime[2,:,6] == cp[6,1]
+    cp = [15/2*(P[2] - P[1]), 5*(P[3] - P[2]), 5*(P[4] - P[3]), 5*(P[5] - P[4]), 15/2*(P[6] - P[5]), 15/2*(P[7] - P[6])]
+
+    @test PK[1, 1] == cp[1]
+    @test PK[1, 2] == cp[2]
+    @test PK[1, 3] == cp[3]
+    @test PK[1, 4] == cp[4]
+    @test PK[1, 5] == cp[5]
+    @test PK[1, 6] == cp[6]
 end
 
 @testset "B-Spline: Interpolation Tests" begin
-    Q = [0 0; 3 4; -1 4; -4 0; -4 -3]
-    n = 4
+    Q = [[0.0, 0], [3.0, 4], [-1.0, 4], [-4.0, 0], [-4.0, -3]]
     p = 3
-    U = [0 0 0 0 28/51 1 1 1 1]
+    U = [0; 0; 0; 0; 28/51; 1; 1; 1; 1]
     ubar = [5/17 9/17 14/17]
     N = zeros(3,4)
-    for i=1:3
-        span = Splines.getspanindex(n,p,ubar[i],U)
-        N[i,:] = Splines.basisfunctions(span+1, ubar[i], p, U)
+    for i = 1:3
+        span = Splines.getspanindex(p, U, ubar[i])
+        N[i, :] = Splines.basisfunctions(span, p, U, ubar[i])
     end
-    A = zeros(5,5)
+    A = zeros(5, 5)
     A[1,1] = 1
     A[5,5] = 1
     for i = 2:3
@@ -103,126 +106,129 @@ end
     for i=2:5
         A[4,i] = N[3,i-1]
     end
-    P = inv(A)*Q
-    m = length(U)-1
+    Qs = hcat(Q...)'
+    P = A\Qs
 
-    mprime, Uprime, Pprime = Splines.globalcurveinterpolation(n,Q,2,p,knotplacement="chordlength")
-    Uprime = reshape(Uprime,1,9)
-    @test mprime == m
-    @test isapprox(Uprime,U,atol=eps())
-    @test isapprox(Pprime,P,atol=1e-14)
+    bsp = globalcurveinterpolation(Q, p)
+
+    @test isapprox(bsp.knots, U, atol=eps())
+    @test isapprox(bsp.ctrlpts[1], P[1, :], atol=1e-14)
+    @test isapprox(bsp.ctrlpts[2], P[2, :], atol=1e-14)
+    @test isapprox(bsp.ctrlpts[3], P[3, :], atol=1e-14)
+    @test isapprox(bsp.ctrlpts[4], P[4, :], atol=1e-14)
+    @test isapprox(bsp.ctrlpts[5], P[5, :], atol=1e-14)
 end
 
 
 
-@testset "B-Spline: Point Projection onto Curve" begin
+# @testset "B-Spline: Point Projection onto Curve" begin
 
-#Some more test sets for auxiliary functions
-# @testset "Point Projection: Loop Function" begin
-# #TODO not sure what to do here, need to think about it more.
+# #Some more test sets for auxiliary functions
+# # @testset "Point Projection: Loop Function" begin
+# # #TODO not sure what to do here, need to think about it more.
 
+# # end
+
+# # @testset "Point Projection: f(u)" begin
+# # #just set up some toy function, could be anything, to make sure this works. just do something by hand. (eqn 6.3 in book)
+# # end
+
+# ## Full Function Tests
+# #gbsairfoil spline parameters
+# #knot vector for gbs airfoil:
+# knots = [0; 0; 0; 0; 0.5; 0.5; 0.5; 1; 1; 1; 1]
+# #controlpoints for gbs airfoil:
+# controlpoints = [1.0 0.0
+#                  1/3 0.147796
+#                  0.0 0.057735
+#                  0.0 0.0
+#                  0.0 -0.057735
+#                  1/3 -0.0291073
+#                  1.0 0.0]
+
+# weightedcontrolpoints = [controlpoints ones(length(controlpoints[:,1]))]
+
+# p = 3
+# n = length(controlpoints[:,1])-1
+
+# #get some points from this spline definition to use for fit tests and stuff.
+# u = collect(range(0,stop=1,length=11))
+# Q = zeros(length(u),3)
+# for i=1:length(u)
+#     Q[i,:] = Splines.curvepoint(n, p, knots, weightedcontrolpoints, u[i])
+# end
+# Q = Q[:,1:2] #just get the x,z coordinates.
+
+# #Projection points
+# projectionpoints = [1.2  0.0;
+#                     1.2 -0.125;
+#                     1.0 -0.125;
+#                     0.8 -0.125;
+#                     0.6 -0.125;
+#                     0.4 -0.125;
+#                     0.2 -0.125;
+#                     0.0 -0.125;
+#                    -0.1 -0.125;
+#                    -0.1  0.0;
+#                    -0.1  0.2;
+#                     0.0  0.2;
+#                     0.2  0.2;
+#                     0.4  0.2;
+#                     0.6  0.2;
+#                     0.8  0.2;
+#                     1.0  0.2;
+#                     1.2  0.2]
+
+# #The projection function will return the points on the spline where these points are projected to. use the function from the IGAFOIL package that gets the curve normals at such points and make sure the normals are aligned with the vectors from the curve to the projection points.
+# uproj, R = Splines.projectpoints(n,p,knots,controlpoints,projectionpoints; eps1=eps(), eps2=eps(), ncheckvals=1000)
+
+# R = R[:,1:end-1]
+
+# normal = zeros(length(uproj),2)
+# for i=1:length(uproj)
+#     if uproj[i] == 0.0 && projectionpoints[i,1] == 1.0
+#         uproj[i] += eps()
+#     end
+#     ##Code for Obtaining Normals
+#     #call curve derivatives function
+#     ders = Splines.curvederivatives1(n, p, knots, weightedcontrolpoints, uproj[i], 1)
+#     #separate output into parts for NURBS derivatives
+#     Aders = ders[:, 1:end-1]
+#     wders = ders[:, end]
+#     #call NURBS derivatives function
+#     dR = Splines.rationalcurvederivatives(Aders, wders, 1)
+#     #just use the first derivative (don't need the zeroeth derivative)
+#     tangent = dR[end, :]
+#     # println("tangent = ", tangent)
+
+#     #take the tangent: rotate and normalize to obtain unit normal vector
+#     normal[i,:] = [tangent[2]; -tangent[1]]/LinearAlgebra.norm(tangent) #+ R[i,:]
 # end
 
-# @testset "Point Projection: f(u)" begin
-# #just set up some toy function, could be anything, to make sure this works. just do something by hand. (eqn 6.3 in book)
+
+# #test dot product of normals and projection vectors.
+
+# for i=1:length(uproj)
+#     if projectionpoints[i,1] > 1.0
+#         @test R[i,:] == [1.0; 0.0]
+#     else
+#         #normalize projection.
+#         projnormed = (projectionpoints[i,:]-R[i,:])/LinearAlgebra.norm(projectionpoints[i,:]-R[i,:])
+#         @test isapprox(LinearAlgebra.dot(projnormed,normal[i,:]),1.0,atol=eps())
+#     end
 # end
 
-## Full Function Tests
-#gbsairfoil spline parameters
-#knot vector for gbs airfoil:
-knots = [0; 0; 0; 0; 0.5; 0.5; 0.5; 1; 1; 1; 1]
-#controlpoints for gbs airfoil:
-controlpoints = [1.0 0.0
-                 1/3 0.147796
-                 0.0 0.057735
-                 0.0 0.0
-                 0.0 -0.057735
-                 1/3 -0.0291073
-                 1.0 0.0]
 
-weightedcontrolpoints = [controlpoints ones(length(controlpoints[:,1]))]
+# #points on curve:
+# pointsoncurve = Q
+# uproj, R = Splines.projectpoints(n,p,knots,controlpoints,pointsoncurve; eps1=eps(), eps2=eps(), ncheckvals=1000)
+# #the projection function should return the values of u that produced the points Q.
+# for i=1:length(pointsoncurve[:,1])
+#     #Test that points R, and Q are the same.
+#     @test isapprox(R[i,1:end-1], Q[i,:], atol=eps())
+# end
 
-p = 3
-n = length(controlpoints[:,1])-1
-
-#get some points from this spline definition to use for fit tests and stuff.
-u = collect(range(0,stop=1,length=11))
-Q = zeros(length(u),3)
-for i=1:length(u)
-    Q[i,:] = Splines.curvepoint(n, p, knots, weightedcontrolpoints, u[i])
-end
-Q = Q[:,1:2] #just get the x,z coordinates.
-
-#Projection points
-projectionpoints = [1.2  0.0;
-                    1.2 -0.125;
-                    1.0 -0.125;
-                    0.8 -0.125;
-                    0.6 -0.125;
-                    0.4 -0.125;
-                    0.2 -0.125;
-                    0.0 -0.125;
-                   -0.1 -0.125;
-                   -0.1  0.0;
-                   -0.1  0.2;
-                    0.0  0.2;
-                    0.2  0.2;
-                    0.4  0.2;
-                    0.6  0.2;
-                    0.8  0.2;
-                    1.0  0.2;
-                    1.2  0.2]
-
-#The projection function will return the points on the spline where these points are projected to. use the function from the IGAFOIL package that gets the curve normals at such points and make sure the normals are aligned with the vectors from the curve to the projection points.
-uproj, R = Splines.projectpoints(n,p,knots,controlpoints,projectionpoints; eps1=eps(), eps2=eps(), ncheckvals=1000)
-
-R = R[:,1:end-1]
-
-normal = zeros(length(uproj),2)
-for i=1:length(uproj)
-    if uproj[i] == 0.0 && projectionpoints[i,1] == 1.0
-        uproj[i] += eps()
-    end
-    ##Code for Obtaining Normals
-    #call curve derivatives function
-    ders = Splines.curvederivatives1(n, p, knots, weightedcontrolpoints, uproj[i], 1)
-    #separate output into parts for NURBS derivatives
-    Aders = ders[:, 1:end-1]
-    wders = ders[:, end]
-    #call NURBS derivatives function
-    dR = Splines.rationalcurvederivatives(Aders, wders, 1)
-    #just use the first derivative (don't need the zeroeth derivative)
-    tangent = dR[end, :]
-    # println("tangent = ", tangent)
-
-    #take the tangent: rotate and normalize to obtain unit normal vector
-    normal[i,:] = [tangent[2]; -tangent[1]]/LinearAlgebra.norm(tangent) #+ R[i,:]
-end
-
-
-#test dot product of normals and projection vectors.
-
-for i=1:length(uproj)
-    if projectionpoints[i,1] > 1.0
-        @test R[i,:] == [1.0; 0.0]
-    else
-        #normalize projection.
-        projnormed = (projectionpoints[i,:]-R[i,:])/LinearAlgebra.norm(projectionpoints[i,:]-R[i,:])
-        @test isapprox(LinearAlgebra.dot(projnormed,normal[i,:]),1.0,atol=eps())
-    end
-end
-
-
-#points on curve:
-pointsoncurve = Q
-uproj, R = Splines.projectpoints(n,p,knots,controlpoints,pointsoncurve; eps1=eps(), eps2=eps(), ncheckvals=1000)
-#the projection function should return the values of u that produced the points Q.
-for i=1:length(pointsoncurve[:,1])
-    #Test that points R, and Q are the same.
-    @test isapprox(R[i,1:end-1], Q[i,:], atol=eps())
-end
-
-end
+# end
 
 
 # @testset "B-Spline: Knot Removal"
@@ -303,35 +309,71 @@ end
 
 # end
 
-# @testset "B-Spline: Least Squares Fit"
-# #gbsairfoil spline parameters
-# #knot vector for gbs airfoil:
-# knots = [0; 0; 0; 0; 0.5; 0.5; 0.5; 1; 1; 1; 1]
-# #controlpoints for gbs airfoil:
-# controlpoints = [1.0 0.0
-#                  1/3 -0.0291073
-#                  0.0 -0.057735
-#                  0.0 0.0
-#                  0.0 0.057735
-#                  1/3 0.147796
-#                  1.0 0.0]
+@testset "B-Spline: Least Squares Fit" begin
+#gbsairfoil spline parameters
+#knot vector for gbs airfoil:
+knots = [0; 0; 0; 0; 0.5; 0.5; 0.5; 1; 1; 1; 1]
+#controlpoints for gbs airfoil:
+controlpoints = [[1.0, 0.0],
+                 [1/3, -0.0291073],
+                 [0.0, -0.057735],
+                 [0.0, 0.0],
+                 [0.0, 0.057735],
+                 [1/3, 0.147796],
+                 [1.0, 0.0]]
 
 # weightedcontrolpoints = [controlpoints ones(length(controlpoints[:,1]))]
+p = 3
+bsp = BSpline(p, knots, controlpoints)
 
-# p = 3
-# n = length(controlpoints[:,1])-1
+# create some points
+u = range(0, 1, length=50)
+x1 = zeros(50)
+y1 = zeros(50)
+for i = 1:50
+    x1[i], y1[i] = curvepoint(bsp, u[i])
+end
 
-# #get some points from this spline definition to use for fit tests and stuff.
-# u = collect(range(0,stop=1,length=50))
-# Q = zeros(length(u),3)
-# for i=1:length(u)
-#     Q[i,:] = Splines.curvepoint(n, p, knots, weightedcontrolpoints, u[i])
-# end
-# Q = Q[:,1:2] #just get the x,z coordinates.
+pts = [[p[1], p[2]]  for p in zip(x1, y1)]
 
-# #Test that the fit is within a specified error, that is, test that at the same U, values, the same Q values are had withing some expected error. One would hope that they would be very close.
+# fit bspline to these points
+n = 30
+bspfit = leastsquarescurve(pts, n, p)
 
-# end
+# evalute new bspline on a mesh spaced more towards nose
+u1 = sin.(range(0, pi/2, length=50))/2.0
+u2 = (sin.(range(-pi/2, 0, length=51)) .+ 1)/2.0 .+ 0.5
+u = [u1; u2[2:end]]
+x2 = zeros(100)
+y2 = zeros(100)
+for i = 1:100
+    x2[i], y2[i] = curvepoint(bspfit, u[i])
+end
+
+# linearly interpolate onto same x values so we can compare
+
+idx = findfirst(y1 .> 0)
+xu1 = x1[idx:end]
+yu1 = y1[idx:end]
+xl1 = x1[idx-1:-1:1]
+yl1 = y1[idx-1:-1:1]
+
+idx = findfirst(y2 .> 0)
+xu2 = x2[idx:end]
+yu2 = y2[idx:end]
+xl2 = x2[idx-1:-1:1]
+yl2 = y2[idx-1:-1:1]
+
+yu3 = linear(xu2, yu2, xu1)
+yl3 = linear(xl2, yl2, xl1)
+
+@test all(isapprox.(yu3[4:end], yu1[4:end], atol=1e-4))
+@test all(isapprox.(yl3[2:end], yl1[2:end], atol=2e-4))
+# more error towards nose just because we interpolated in x not b/c of bspline
+@test all(isapprox.(yu3[1:3], yu1[1:3], atol=1e-3))
+@test all(isapprox.(yl3[1], yl1[1], atol=3e-3))
+
+end
 
 # @testset "B-Spline: Approximating with Error Bound" begin
 

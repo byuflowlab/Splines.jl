@@ -1,308 +1,299 @@
 """
-    getspanindex(n, p, u, U)
+    BSpline(degree, knots, ctrlpts)
 
-Complete binary search to find span index of vector, U, in which the parametric point, u, lies. (NURBS A2.1)
+Construct a b-spline object
+
+# Arguments
+- `deg::Integer`: degree
+- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1) 
+- `ctrlpts::Vector{Vector{Float64}}`:: control points.  outer index is number of control points, inner index of dimensionality of point.
 """
-function getspanindex(n, p, u, U)
-    # println("Getting Span Index, u = $u")
-    if u == U[n+1+1]
-        # println("Special case")
-        # println("Returning Span Index")
-        return n #special case
-    else
-        lo = p+1
-        hi = n+2
-        mid = div((lo+hi), 2)
-        while u<U[mid] || u >= U[mid+1]
-            if u<U[mid]
-                hi = mid
-            else
-                lo = mid
-            end #if low
-            # println("lo: ", lo)
-            # println("hi: ", hi)
-            mid = div((lo+hi), 2)
-            # println("mid: ", mid)
-            if U[mid]==U[mid+1] && abs(lo-hi)==1
-                break
-            end
-        end #while not found
-        # println("Returning Span Index")
-        return mid-1
-    end #if not end
+struct BSpline{TF, TI}
+    degree::TI
+    knots::Vector{TF}
+    ctrlpts::Vector{Vector{TF}}
 end
 
+
 """
-    basisFunctions(i, u, p, U)
+    getspanindex(deg, knots, u)
 
-Calculate the non-vanishing basis functions of the B-Spline of order p, defined by knots U at parametric point, ``u``.
+(private function) binary search to find span index of vector, knots, in which the parametric point, u, lies. (NURBS A2.1)
 
-The formula for the basis functions is:
+# Arguments
+- `deg::Integer`: degree
+- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1) 
+- `u`::Float64`: nondimensional location we are searching for
 
-```math
-N_{i,0}(u) =
-\\begin{cases}
-      1 & \\textrm{if } u_i \\leq u \\leq u_{i+1} \\\\
-      0 & \\textrm{otherwise}
-\\end{cases}
-```
-
-```math
-N_{i,p}(u) = \\frac{u-u_i}{u_{i+p} - u_i} N_{i,p-1}(u) - \\frac{u_{i+p+1} - u}{u_{i+p+1} - u_{i+1}} N_{i+1,p-1}(u)
-```
-
-Note that the algorithm used in ```basisFunctions``` removes redunant calculation and potential division by zero (see NURBS, eqn 2.5 and A2.2).
+# Returns
+- `span::Integer`: corresponding index i for u between knots_i and knots_i+1
 """
-function basisfunctions(i, u, p, U)
-    N = ones(p+1)
-    left = zeros(p) #was p+1, not sure if that was needed
-    right = zeros(p) #was p+1, not sure if that was needed
-    for j=1:p
-        left[j] = u-U[i+1-j]
-        # println("left = ", left)
-        right[j] = U[i+j]-u
-        # println("right = ", right)
+function getspanindex(deg, knots, u)
+    
+    n = length(knots) - deg - 2
+    U = OffsetArray(knots, 0:length(knots)-1)
+
+    if u >= U[n+1]
+        return n
+    elseif u <= U[deg]
+        return deg
+    end
+
+    low = deg
+    high = n+1
+    mid = (low + high) ÷ 2
+    while (u < U[mid] || u >= U[mid+1])
+        if u < U[mid]
+            high = mid
+        else
+            low = mid
+        end
+        mid = (low + high) ÷ 2
+    end
+    return mid
+end
+
+
+"""
+    basisfunctions(span, deg, knots, u)
+
+(private function) Compute nonvanishing basis functions (NURBS A2.2)
+
+# Arguments
+- `deg::Integer`: degree
+- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1) 
+- `u`::Float64`: nondimensional location we are searching for
+- `span::Integer`: corresponding index i for u between knots_i and knots_i+1 (computed from getspanindex)
+
+# Returns
+- `N::Vector{Float64}`: vector of length N_0 ... N_deg
+"""
+function basisfunctions(span, deg, knots, u)
+
+    N = OffsetArray(zeros(deg+1), 0:deg)
+    left = OffsetArray(zeros(deg+1), 0:deg)
+    right = OffsetArray(zeros(deg+1), 0:deg)
+    U = OffsetArray(knots, 0:length(knots)-1)
+
+    N[0] = 1.0
+    for j = 1:deg
+        left[j] = u - U[span+1-j]
+        right[j] = U[span+j] - u
         saved = 0.0
-        for r=0:j-1
-            # println("denom = ", right[r+1] + left[j-r])
-            temp = N[r+1]/(right[r+1] + left[j-r])
-            N[r+1] = saved + right[r+1]*temp
+        for r = 0:j-1
+            temp = N[r] / (right[r+1] + left[j-r])
+            N[r] = saved + right[r+1]*temp
             saved = left[j-r]*temp
         end
-        N[j+1] = saved
+        N[j] = saved
     end
     return N
 end
 
 
 """
-    singlebasisfunction(p,m,U,i,u)
+    singlebasisfunction(i, deg, knots, u)
 
-Compute single basis function N_i^p. (NURBS A2.4)
+(private function) Compute single basis function N_i^p. (NURBS A2.4)
 
-Inputs:
-- p : the basis degree up to the the curve order
-- m : there are m+1 knots in U
-- U : the knot vector
-- i : the index of the basis (the i in N_i)
-- u : parametric point of interest
+# Arguments
+- `i::Integer` : the index of the basis (the i in N_i)
+- `deg::Integer` : the basis degree up to the the curve order
+- `knots::Vector{Float}` : the knot vector
+- `u::Float` : parametric point of interest
 
-Outputs:
-- Nip: the N_i^p basis function value
+# Returns
+- `Nip::Float`: the N_i^p basis function value
 """
-function singlebasisfunction(p,m,U,i,u)
-    if ( i==1 && u == U[1] ) || ( i == m-p-1+1 && u == U[m+1] )  #special case
-        return 1.0
-    end
+function singlebasisfunction(i, deg, knots, u)
+    m = length(knots) - 1
+    U = OffsetArray(knots, 0:m)
+    p = deg
 
-    if ( u < U[i] ) || ( u >= U[i+p+1] ) #local property
+    if (i == 0 && u == U[0]) || (i == m-p-1 && u == U[m])
+        return 1.0
+    elseif u < U[i] || u >= U[i+p+1]
         return 0.0
     end
-
-    N = zeros(p+1)
-    for j=1:p+1 #initialize zeroth-degree functions
-        if u>=U[i+j] && u < U[i+j+1]
+    N = OffsetArray(zeros(p+1), 0:p)
+    for j = 0:p
+        if u >= U[i+j] && u < U[i+j+1]
             N[j] = 1.0
         else
             N[j] = 0.0
         end
     end
-
-    for k=1:p #compute triangular table.
-        if N[1]==0
+    for k = 1:p
+        if N[0] == 0.0
             saved = 0.0
         else
-            saved = ((u-U[i])*N[1])/(U[i+k]-U[i])
+            saved = ((u-U[i])*N[0]) / (U[i+k]-U[i])
         end
-
-        for j=1:p-k+1
+        for j = 0:p-k
             Uleft = U[i+j+1]
             Uright = U[i+j+k+1]
-            if N[j+1]==0.0
+            if N[j+1] == 0.0
                 N[j] = saved
                 saved = 0.0
             else
-                temp = N[j+1]/(Uright-Uleft)
-                N[j] = saved+(Uright-u)*temp
+                temp = N[j+1] / (Uright-Uleft)
+                N[j] = saved + (Uright-u)*temp
                 saved = (u-Uleft)*temp
-            end #if
-        end #for
-    end #for
-
-    return N[1]
+            end
+        end
+    end
+    return N[0]
 end
 
 """
-    basisfunctionsderivatives(i, u, p, n, U)
+    basisfunctionsderivatives(span, deg, knots, u, n)
 
-Calculate the non-vanishing basis functions and derivatives of the B-Spline of order ``p```, defined by knots U at parametric point, ``u``.
+(private function) Calculate the non-vanishing basis functions and derivatives of the B-Spline of order ``p```, 
+defined by knots U at parametric point, ``u``. (NURBS A 2.3)
 
-The basis function derivative is given by
+# Arguments
+- `span::Integer`: knot span containing u
+- `deg::Integer`: the curve order
+- `knots::Vector{Float}`: the knot vector
+- `u::Float`: parametric point of interest
+- `n::Integer` : the max derivative order (n ≦ p)
 
-```math
-N_{i,p}^{'} = \\frac{p}{u_{i+p} - u_i} N_{i,p-1}(u) - \\frac{p}{u_{i+p+1} - u_{i+1}} N_{i+1,p-1}(u)
-```
-
-(see NURBS, eqn 2.7 and A2.3)
-
-Inputs:
-
-- i : knot span containing u
-- u : parametric point of interest
-- p : the curve order
-- n : the max derivative order (n ≦ p)
-- U : the knot vector
+# Returns
+- `ders::Matrix{Float}`: [0..n, 0..p]  ders[0, :] function values, ders[1: :], first derivatives, etc.
 """
-function basisfunctionsderivatives(i, u, p, n, U)
-    #Initialize
-    # n = length(U)-p-1
-    ndu = ones(p+1, p+1)
-    a = zeros(p+1, p+2)
-    ders = zeros(n+1, p+1)
-    left = zeros(p+1)
-    right = zeros(p+1)
+function basisfunctionsderivatives(span, deg, knots, u, n)
+    
+    U = OffsetArray(knots, 0:length(knots)-1)
+    p = deg
+    i = span
+    
+    ndu = OffsetArray(zeros(p+1, p+1), 0:p, 0:p)
+    a = OffsetArray(zeros(2, p+1), 0:1, 0:p)
+    ders = OffsetArray(zeros(n+1, p+1), 0:n, 0:p)
+    left = OffsetArray(zeros(p+1), 0:p)
+    right = OffsetArray(zeros(p+1), 0:p)
+    ndu[0, 0] = 1.0
 
-    #---Compute (and save) Basis Functions and Knot Differences
-    for j=1:p
-    left[j] = u-U[i+1-j]
-    right[j] = U[i+j]-u
-    saved = 0.0
-        for r=0:j-1
-            #upper triangle (basis functions)
-            ndu[j+1, r+1] = right[r+1] + left[j-r]
-            temp = ndu[r+1, j]/ndu[j+1, r+1]
-            #lower triangle (knot differences)
-            ndu[r+1, j+1] = saved + right[r+1]*temp
+    for j = 1:p
+        left[j] = u - U[i+1-j]
+        right[j] = U[i+j] - u
+        saved = 0.0
+        for r = 0:j-1
+            ndu[j, r] = right[r+1] + left[j-r]
+            temp = ndu[r, j-1] / ndu[j, r]
+
+            ndu[r, j] = saved + right[r+1]*temp
             saved = left[j-r]*temp
-        end #for r
-    ndu[j+1, j+1] = saved
-    end #for j
-
-    #Load Basis Functions
-    for j=1:p+1
-        ders[1, j] = ndu[j, p+1]
-    end #for j
-
-    #---Compute Derivatives
-    # println("\n\nDerivative Algorithm:\nFor knot span ", i)
-    for r=0:p
-        # println("For basis fuction: ", r)
-        #Set row indices for coefficient array (swaps back and forth as they're computed/used)
-        s1 = 0
-        s2 = 1
-        a[0+1, 0+1] = 1.0
-        for k=1:n
-            # println("Computing Derivative ", k)
-            # println("Coefficient Array Row Indices: s1 = ", s1, "\ts2 = ", s2)
-            d = 0.0
-            rk = r-k
-            pk = p-k
-            # println("rk = ", rk)
-            # println("pk = ", pk)
-            if r >= k
-                # println("r >= k")
-                a[s2+1, 0+1] = a[s1+1, 0+1]/ndu[pk+1+1, rk+1]
-                d = a[s2+1, 0+1]*ndu[rk+1, pk+1]
-            end #if r>=k
-
-            if rk >= -1
-                # println("rk >= -1, \t j1 = 1")
-                j1 = 1
-            else
-                # println("rk < -1, \t j1 = -rk")
-                j1 = -rk
-            end #if rk>=-1
-
-            if r-1 <= pk
-                # println("r-1 <= pk, \t j2 = k-1")
-                j2 = k-1
-            else
-                # println("r-1 > pk\t j2 = p-r")
-                j2 = p-r
-            end
-            # println("j1 = ", j1, "\tj2 = ", j2)
-            #add in condition so ranges work for julia
-            if j2 >= j1
-                for j=j1:j2
-                    # println("j = ", j)
-                    # println("ndu[pk+1, rk+j] = ", ndu[pk+1+1, rk+j+1])
-                    # println("a[s1, j] = ", a[s1+1, j+1])
-                    # println("a[s1, j-1] = ", a[s1+1, j-1+1])
-                    a[s2+1, j+1] = (a[s1+1, j+1]-a[s1+1, j-1+1])/ndu[pk+1+1, rk+j+1]
-                    # println("a[s2, j] = ", a[s2+1, j+1])
-                    # println("ndu[rk+j, pk+1] = ", ndu[rk+j+1, pk+1])
-                    d += a[s2+1, j+1]*ndu[rk+j+1, pk+1]
-                    # println("d = ", d)
-                end #for j
-            end
-
-            if r <= pk
-                # println("r <= pk")
-                # println("a[s1, k-1] = ", a[s1+1, k-1+1])
-                # println("ndu[pk+1, r] = ", ndu[pk+1+1, r+1])
-                a[s2+1, k+1] = -a[s1+1, k-1+1]/ndu[pk+1+1, r+1]
-                # println("a[s2, k-1] = ", a[s2+1, k+1])
-                # println("a[s2, k] = ", a[s2+1, k+1])
-                # println("ndu[r, pk+1] = ", ndu[r+1, pk+1])
-                d += a[s2+1, k+1]*ndu[r+1, pk+1]
-                # println("d = ", d)
-            end #if r
-            ders[k+1, r+1] = d
-            # println("derivatives: N", r+2, p, "^", k)
-            # display(ders)
-            # println()
-            #switch rows
-            j = s1
-            s1 = s2
-            s2 = j
-            # println("\n")
-        end #for k
-        # println("\n")
-    end #for r
-    #Multiply through by the correct factors
-
-    for k=1:n
-        for j=0:p
-            ders[k+1, j+1] *= factorial(p)/factorial(p-k)
         end
+        ndu[j, j] = saved
+    end
+
+    for j = 0:p
+        ders[0, j] = ndu[j, p]
+    end
+
+    for r = 0:p
+        s1 = 0; s2 = 1
+        a[0, 0] = 1.0
+        for k = 1:n
+            d = 0.0
+            rk = r-k; pk = p-k
+            if r >= k
+                a[s2, 0] = a[s1, 0] / ndu[pk+1, rk]
+                d = a[s2, 0] * ndu[rk, pk]
+            end
+            j1 = (rk >= -1) ? 1 : -rk
+            j2 = (r-1 <= pk) ? k-1 : p-r
+            for j = j1:j2
+                a[s2, j] = (a[s1, j] - a[s1,j-1]) / ndu[pk+1, rk+j]
+                d += a[s2, j] * ndu[rk+j, pk]
+            end
+            if r <= pk
+                a[s2, k] = -a[s1, k-1] / ndu[pk+1, r]
+                d += a[s2, k] * ndu[r, pk]
+            end
+            ders[k, r] = d
+            j=s1; s1=s2; s2=j
+        end
+    end
+
+    r = p
+    for k = 1:n
+        for j = 0:p
+            ders[k, j] *= r
+        end
+        r *= (p-k)
     end
 
     return ders
+end 
 
-end #function
+
 
 """
-    curvederivatives1(n, p, U, P, u, d)
+Evaluate point on B-spline curve (NURBS, A3.1)
 
-Compute a curve point and its derivatives up do the dth derivative at parametric point, ``u``. (NURBS, A3.2)
+# Arguments
+- `bspline::BSpline: bspline object`
+- `u::Float`: point on spline to evaluate at
 
-#### Inputs
-- n : the number of control points is n+1
-- p : the degree of the curve
-- U : the knot vector
-- P : the control points
-- u : the parametric point of interest
-- d : derivative order (0 ≤ k ≦ d)
+# Returns
+- `C::Vector{Float}`: point in ND space
 """
-function curvederivatives1(n, p, U, P, u, d)
+function curvepoint(bspline::BSpline, u)
+    
+    P = OffsetArray(bspline.ctrlpts, 0:length(bspline.ctrlpts)-1)
+    p = bspline.degree
+
+    span = getspanindex(p, bspline.knots, u)
+    N = basisfunctions(span, p, bspline.knots, u)
+    C = zeros(length(bspline.ctrlpts[1]))
+    for i = 0:p
+        C += N[i]*P[span-p+i]
+    end
+    return C
+end
+
+
+
+"""
+    curvederivatives(bspline, u, d)
+
+Compute a curve point and its derivatives up do the dth derivative at parametric point, ``u``. 
+(NURBS, A3.2)
+
+# Arguments
+- `bspline::BSpline: bspline object`
+- `u::Float`: point on spline to evaluate at
+- `d::Float`: derivative order (0 ≤ k ≤ d)
+
+# Returns
+- `CK::Vector{Vector{Float}}`.  where CK[0] is the point, CK[1] the first derivative, and so on.
+"""
+function curvederivatives(bspline::BSpline, u, d)
+    p = bspline.degree
+    P = OffsetArray(bspline.ctrlpts, 0:length(bspline.ctrlpts)-1)
+
     du = min(d, p)
-    CK = zeros(d+1, length(P[1, :]))
-    span = getspanindex(n, p, u, U)
-    # println("span: ", span)
-    nders = basisfunctionsderivatives(span+1, u, p, du, U)
-    # println("ders:")
-    # display(nders)
-    # println()
-    for k=0:du
-        for j=0:p
-            # println("nders[k, j] = ",  nders[k+1, j+1])
-            # println("P[span-p+j] = ", P[span-p+j+1, :])
-            CK[k+1, :] += nders[k+1, j+1]*P[span-p+j+1, :]
+    ndim = length(bspline.ctrlpts[1])
+    # CK = OffsetArray(zeros(du+1, ndim), 0:du, 1:ndim)
+    CK = OffsetArray(Vector{Vector{Float64}}(undef, du+1), 0:du)
+
+    for k = p+1:d
+        CK[k] = zeros(ndim)
+    end
+
+    span = getspanindex(p, bspline.knots, u)
+    nders = basisfunctionsderivatives(span, p, bspline.knots, u, du)
+
+    for k = 0:du
+        CK[k] = zeros(ndim)
+        for j = 0:p
+            CK[k] += nders[k, j] * P[span-p+j]
         end
     end
 
-    return CK
-
+    return CK  #onebased(CK)
 end
 
 """
@@ -324,154 +315,228 @@ with
 
 (see NURBS, eqn 3.8 and A3.3)
 
-#### Inputs
-- n : the number of control points is n+1
-- p : the degree of the curve
-- U : the knot vector
-- P : the control points
-- u : the parametric point of interest
-- d : derivative order (0 ≤ k ≦ d)
-- r1 : first control point index
-- r2 : last control point index
+# Arguments
+- `bspline::BSpline: bspline object`
+- `r1::Integer : first control point index to take derivatives at
+- `r2::Integer : last control point index to take derivatives at
+- `d::Float`: derivative order (0 ≤ k ≦ d)
+
+# Returns
+- `PK::Matrix{Vector{Float}}`: PK[i, j] is the ith derivative of the jth control point
 """
-function curvederivativecontrolpoints(n, p, U, P, d, r1, r2)
-    r = r2-r1
-    # println("r2-r1 = $r")
-    PK = zeros(d+1, length(P[1, :]), r+1)
-    # println("size of PK = ", size(PK))
-    for i=0:r
-        PK[0+1, :, i+1] = P[r1+i+1, :]
-    end
-    # println("PK[0, :] = ")
-    # display(PK)
-    # println()
-    if d >= 1
-        for k=1:d
-            # println("k = $k")
-            tmp = p-k+1
-            # println("tmp = $tmp")
-            for i=0:r-k
-                # println("i = $i")
-                PK[k+1, :, i+1] = tmp*(PK[k-1+1, :, i+1+1] - PK[k-1+1, :, i+1])/(U[r1+i+p+1+1] - U[r1+i+k+1])
-                # println("PKi1 = ", PK[k-1+1, :, i+1+1])
-                # println("PKi = ", PK[k-1+1, :, i+1])
-                # println("Uip1 = ", U[r1+i+p+1+1])
-                # println("Uik = ", U[r1+i+k+1])
-                # println("PK[k, i] = ", PK[k+1, :, i+1])
-            end
+function curvederivativecontrolpoints(bspline, r1, r2, d)
+    p = bspline.degree
+    P = OffsetArray(bspline.ctrlpts, 0:length(bspline.ctrlpts)-1)
+    U = OffsetArray(bspline.knots, 0:length(bspline.knots)-1)
+    r1 -= 1  # 0-based indexing
+    r2 -= 1
+    ndim = length(bspline.ctrlpts[1])
+
+    r = r2 - r1
+
+    PK = OffsetArray(Matrix{Vector{Float64}}(undef, d+1, r+1), 0:d, 0:r)
+    for i = 0:r
+        for k = 0:d
+            PK[k, i] = zeros(ndim)
         end
     end
 
-    return PK
+    for i = 0:r
+        PK[0, i] = P[r1 + i]
+    end
 
+    for k = 1:d
+        tmp = p-k+1
+        for i = 0:r-k
+            PK[k, i] = tmp*(PK[k-1, i+1] - PK[k-1, i]) / (U[r1+i+p+1] - U[r1+i+k])
+        end
+    end
+
+    return OffsetArray(PK, 0:d, 1:r+1)
 end
+
 
 #There is another curvederivatives algorithm in the book (Algorithm 3.4)
 
 
-
 """
-    computeubar(r,Q,knotplacement)
+    globalcurveinterpolation(pts, deg)
 
-Compute ubar from points, Q, given knotplacement scheme.
+Interpolate ctrl points pts, with a B-Spline of degree deg. (NURBS A9.1)
 
-Inputs:
-- r : there are r+1 datapoints
-- Q : array of data points
-- knotplacement : type of placement, centripetal or chordlength
+# Arguments
+- `pts::Vector{Vector{Float}}`: outer vector of length npts, inner vector of length dimension of space
+- `deg::Integer`: degree of B-spline
 
 Outputs:
-- ubar : well distributed parametric points.
+- `bspline::BSpline`: bspline object
 """
-function computeubar(r,Q,knotplacement)
-    ubar = zeros(r+1)
-    ubar[1] = 0
-    ubar[end] = 1
-    # find \bar{u}_k
-    if knotplacement == "centripetal"  #eqn 9.6
-        global d = 0.0
-        for i=2:r+1
-            global d += sqrt(LinearAlgebra.norm(Q[i-1,:] - Q[i,:]))
-        end
+function globalcurveinterpolation(pts, deg)
 
-        for i = 2:r
-            ubar[i] = ubar[i-1] + sqrt(LinearAlgebra.norm(Q[i,:]-Q[i-1,:]))/d
-        end
+    n = length(pts) - 1
+    Q = OffsetArray(pts, 0:n)
+    m = n + deg + 1
 
-    elseif knotplacement == "chordlength" #eqn 9.5
-        global d = 0.0
-        for i=2:r+1
-            global d += LinearAlgebra.norm(Q[i-1,:] - Q[i,:])
-        end
-
-        for i = 2:r
-            ubar[i] = ubar[i-1] + LinearAlgebra.norm(Q[i,:]-Q[i-1,:])/d
-        end
-
-    else
-        ubar = collect(range(0,stop=1,length=r+1))
+    d = 0.0
+    for i = 1:n
+        d += norm(Q[i] - Q[i-1])
     end
 
-    return ubar
+    u = OffsetArray(zeros(n+1), 0:n)
+    u[0] = 0.0
+    u[n] = 1.0
+    for i = 1:n-1
+        u[i] = u[i-1] + norm(Q[i] - Q[i-1]) / d
+    end
 
+    U = OffsetArray(zeros(m+1), 0:m)
+    for i = 1:deg
+        U[i] = 0.0
+    end
+    for i = m-deg:m
+        U[i] = 1.0
+    end
+
+    for j = 1:n-deg
+        for i = j:j+deg-1
+            U[j+deg] += u[i]
+        end
+        U[j+deg] /= deg
+    end
+    knots = onebased(U)
+
+    A = OffsetArray(zeros(n+1, n+1), 0:n, 0:n)
+    for i = 0:n
+        span = getspanindex(deg, knots, u[i])
+        N = basisfunctions(span, deg, knots, u[i])
+        A[i, span-deg:span] = N
+    end
+    A1 = onebased(A)
+
+    ndim = length(Q[0])
+    npts = length(Q)
+    P = Vector{Vector{Float64}}(undef, npts)
+    for j = 1:npts
+        P[j] = zeros(ndim)
+    end
+    for i = 1:ndim
+        rhs = [q[i] for q in Q]
+        x = A1\onebased(rhs)
+        for j = 1:npts
+            P[j][i] = x[j]
+        end
+    end
+
+    return BSpline(deg, knots, P)
 end
 
+
 """
-    globalcurveinterpolation(n,Q,r,p; knotplacement)
+    leastsquarescurve(pts, nctrl, deg)
 
-Interpolate points Q, with a B-Spline of degree p. (NURBS A9.1)
+Least squares fit to provided points.  (NURBS section 9.4.1)
+TODO: Currently hard-coded to 2D data.
 
-Inputs:
-- n : n+1 is number of data points to be interpolated
-- Q : coordinates of data points to be interpolated
-- r : the number of coordinates per Q (the spacial dimension)
-- p : degree of interpalatory spline
-- knotplacement : the knot placement scheme; either chordlength (common, uniform parameterization) or centripetal (good for data that takes sharp turns).
+# Arguments
+- `pts::Vector{Vector{Float}}`: data points
+- `nctrl::Integer`: number of control points to use in fit
+- `deg::Integer`: degree of bspline used in fit
 
-Outputs:
-- m : number of knots-1
-- U : knot vector
-- P : control points
+# Returns
+- `bspline::BSpline`: a BSpline object
 """
-function globalcurveinterpolation(n,Q,r,p; knotplacement="centripetal")
-    m = n+p+1
+function leastsquarescurve(pts, nctrl, deg)
 
-    ##-- Get knot vector
-    ubar = computeubar(length(Q[:,1])-1,Q,knotplacement)
-    U = zeros(m+1)
-    P = zeros(n+1,r)
+    m = length(pts) - 1
+    Q = OffsetArray(pts, 0:m)
+    n = nctrl - 1
 
-    if knotplacement != "centripetal" && knotplacement != "chordlength" #eqn 9.3
-        warn("No valid knot placement scheme selected, using equidistant...")
-        U[1:p+1] .= 0
-        U[m+1-p:m+1] .= 1
-        if 2==n+1-p
-            U[p+1+1] = 1/2
-        else
-            U[p+1+1:m+1-p-1] = range(0,stop=1,length=m+1-p-1-(p+1+1))
+    # --- compute ubar_k -----
+    dist = 0.0
+    for i = 1:m
+        dist += norm(Q[i] - Q[i-1])
+    end
+
+    u = OffsetArray(zeros(m+1), 0:m)
+    u[0] = 0.0
+    u[m] = 1.0
+    for i = 1:m-1
+        u[i] = u[i-1] + norm(Q[i] - Q[i-1]) / dist
+    end
+
+    # ---- compute knot vector -----
+    r = n + deg + 1
+    U = OffsetArray(zeros(r+1), 0:r)
+    for i = 1:deg
+        U[i] = 0.0
+    end
+    for i = r-deg:r
+        U[i] = 1.0
+    end
+
+    d = (m + 1) / (n - deg + 1)
+    for j = 1:n-deg
+        i = floor(Int, j * d)
+        alpha = j * d - i
+        U[deg + j] = (1 - alpha)*u[i - 1] + alpha*u[i]
+    end
+    knots = OffsetArrays.no_offset_view(U)
+
+    # --------- setup N matrices -------
+    Nm = zeros(m-1, n-1)
+    for j = 1:n-1
+        for i = 1:m-1
+            Nm[i, j] = singlebasisfunction(j, deg, knots, u[i])
         end
-    else
-        #from \bar{u}_k get the knot vector
-        U[1:p+1] .= 0
-        U[m+1-p:m+1] .= 1
-        # println("ubar: ", ubar)
-        for i=2:n+1-p
-            U[i+p] = sum(ubar[i:i+p-1])/p
+    end
+
+    # ------ Rk --------
+    Rk = zeros(m-1, length(Q[0]))
+    for k = 1:m-1
+        N0 = singlebasisfunction(0, deg, knots, u[k])
+        Nn = singlebasisfunction(n, deg, knots, u[k])
+        Rk[k, :] = Q[k] - N0*Q[0] - Nn*Q[m]
+    end
+
+    # ------ R ---------
+    ndim = length(Q[0])
+    R = zeros(n-1, ndim)
+    # Rx = zeros(n-1)
+    # Ry = zeros(n-1)
+    for i = 1:m-1
+        for j = 1:n-1
+            N = singlebasisfunction(j, deg, knots, u[i])
+            for k = 1:ndim
+                R[j, k] += N * Rk[i, k]
+            end
+            # Rx[j] += N * Rk[i, 1]
+            # Ry[j] += N * Rk[i, 2]
+        end
+    end    
+
+    # --- ctrlpts -----
+    NN = Nm'*Nm
+
+    P = Vector{Vector{Float64}}(undef, nctrl)
+    for j = 1:nctrl
+        P[j] = zeros(ndim)
+    end
+    for i = 1:ndim
+        Px = NN \ R[:, i]
+        Px = [Q[0][i]; Px; Q[m][i]]
+        for j = 1:nctrl
+            P[j][i] = Px[j]
         end
     end
 
-    A = zeros(n+1,n+1)
-    for i=1:n+1
-        span = Splines.getspanindex(n,p,ubar[i],U)
-        N = Splines.basisfunctions(span+1, ubar[i], p, U)
-        A[i,span+1-p:span+1] = N
-    end
+    # Px = NN \ Rx
+    # Py = NN \ Ry
 
-    for i=1:r
-        P[:,i] = A\Q[:,i]
-    end
+    # Px = [Q[0][1]; Px; Q[m][1]]
+    # Py = [Q[0][2]; Py; Q[m][2]]
+    # P = [[p[1], p[2]] for p in zip(Px, Py)]
 
-    return m, U, P
+    return BSpline(deg, knots, P)
 end
 
 
@@ -829,256 +894,188 @@ end
 #     return ek,nh,U,P
 # end
 
-"""
-    f(u,Q,C,dC,ddC)
-
-Auxiliar function for point projection: Solves for f(u) and f'(u) used in eqn 6.3 in NURBS.
-
-Inputs:
-- u : knot value
-- Q : point to project
-- C : curve point at u
-- dC : first curve derivative at u
-- ddC : second curve derivative at u
-
-Outputs:
-- fu : f(u)
-- fprimeu : f'(u)
-"""
-function f(u,Q,C,dC,ddC)
-
-    fu = LinearAlgebra.dot(dC,C-Q)
-    fprimeu = LinearAlgebra.dot(ddC,(C-Q)) + LinearAlgebra.norm(dC)^2
-
-    return fu, fprimeu
-
-end
-
-"""
-    projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
-
-Run convergence criteria loop (Newton iteration), returning the knot value that satisfies the criteria.
-
-Inputs:
-- n : there are n+1 control points, P
-- p : curve degree
-- U : knot vector
-- P : control points
-- ui : the parametric start point
-- Q : the point to project
-- eps1 : tolerance for points being on the curve
-- eps2 : tolerance for points being projected on the curve
-- a : the lower bound of the span we're checking
-- b : the upper bound of the span we're checking
-- closed : boolean whether spline is closed or open
-
-Outputs:
-- uip1 : the final knot calculated after criteria are met
-"""
-function projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
-    local uip1
-    while true
-
-        ## Check criteria
-        CK = Splines.curvederivatives1(n, p, U, P, ui, 1)
-        C = CK[1,:]
-        dC = CK[2,:]
-        #criteria 1: are they the same point on the spline
-        crit1 = LinearAlgebra.norm(C-Q)
-        #criteria 2: are they aligned
-        num2 = LinearAlgebra.norm(LinearAlgebra.dot(dC,(C-Q)))
-        den2 = LinearAlgebra.norm(dC)*LinearAlgebra.norm(C-Q)
-        crit2 = num2/den2
-        #if criteria 1 or 2 is not met
-        if crit1 > eps1 || crit2 > eps2
-            ##compute a new uip1
-            # update u to be next value
-            # println("ui= ", ui)
-            #calculate C(u_i) and C'(u_i)
-            CK = Splines.curvederivatives1(n, p, U, P, ui, 2)
-            C = CK[1,:]
-            dC = CK[2,:]
-            ddC = CK[3,:]
-            # println("ui= ", ui)
-            # println("Q= ", Q)
-            # println("C= ", C)
-            # println("dC= ", dC)
-            # println("ddC= ", ddC)
-
-            #calculate f(u_i) and f'(u_i)
-            fu, fprimeu = Splines.f(ui,Q,C,dC,ddC)
-            #calculate u_{i+1}
-            uip1 = ui - fu/fprimeu
-            # println("uip1: ", uip1)
-
-            ##check criteria 3 and 4
-            #criteria 3: is the point beyond the spline ends? if so, adjust the point
-            if closed == false
-                if uip1 < a
-                    uip1 = a
-                elseif uip1 > b
-                    uip1 = b
-                end
-            else
-                if uip1 < a
-                    uip1 = b - (a - uip1)
-                elseif uip1 > b
-                    uip1 = a + (uip1 - b)
-                end
-            end
-
-            #criteria 4: Was the change in points very small?
-            crit4 = LinearAlgebra.norm((uip1-ui)*dC)
-            # println("it's: ", crit1 <= eps1 , crit2 <= eps2 , crit4 <= eps1)
-            #if any of criteria 1, 2, or 4 is satisfied, break.
-            if crit1 <= eps1 || crit2 <= eps2 || crit4 <= eps1
-                #crit1 means the point is on the spline
-                #crit2 means the point is properly projected
-                #crit4 means the point is off the end point of the spline.
-                break
-            end
-
-            ui = uip1
-
-        else #if both were satisfied, then we're done.
-            uip1 = ui
-            break
-        end
-
-    end
-
-    return uip1
-
-end
-
-"""
-    projectpoints(n,p,U,P,Q,eps1=1e-10,eps2=1e-10,ncheckvals=100)
-
-Project points, Q, onto spline, returning projected points, R.
-
-Inputs:
-- n : there are n+1 control points, P
-- p : curve degree
-- U : knot vector
-- P : control points
-- Q : points to project
-- eps1 : tolerance for points being on the curve
-- eps2 : tolerance for points being projected on the curve
-- ncheckvals : number of points used to look for good starting points.
-
-Outputs:
-- uproj : knot values on curve where Q has been projected
-- R : the projected points.
-"""
-function projectpoints(n,p,U,P,Q; eps1=eps(),eps2=eps(),ncheckvals=1000) #TODO check what tolerances are good.
-    #weight control points
-    Pw = [P ones(length(P[:,1]))]
-
-    ##find start values, u0
-    #setup a somewhat fine distribution of candidates
-    ucheck = collect(range(0,stop=1,length=ncheckvals))
-
-    #get curve points at knot values we're comparing
-    Ccheck = zeros(ncheckvals,length(Pw[1,:]))
-    for i=1:ncheckvals
-        Ccheck[i,:] = Splines.curvepoint(n, p, U, Pw, ucheck[i])
-    end
-    Ccheck = Ccheck[:,1:end-1]
-    #get distances for each candidate start points and find minimum for each point, Q
-    u0 = zeros(length(Q[:,1]))
-    for i=1:length(Q[:,1])
-        mindist = Inf
-        for j=1:ncheckvals
-            dist = LinearAlgebra.norm(Q[i,:]-Ccheck[j,:])
-            if dist < mindist
-                mindist = dist
-                u0[i] = ucheck[j]
-            end
-        end
-    end
-
-    #for each u0, find the parametric value associated with the point's projection onto the curve.
-    uproj = zeros(length(Q[:,1]))
-    for i=1:length(uproj)
-        uproj[i] = Splines.projectionloop(n,p,U,P,u0[i],Q[i,:],eps1,eps2)
-    end
-
-    #return projected curve points, R_k
-    Pw = [P ones(length(P[:,1]))]
-    R = zeros(length(Q[:,1]),length(Pw[1,:]))
-    for i=1:length(uproj)
-        R[i,:] = curvepoint(n, p, U, Pw, uproj[i])
-    end
-
-    return uproj, R
-
-end
-
-
 # """
-#     globalcurveapproximation(m,Q,p,E; knotplacement)
+#     f(u,Q,C,dC,ddC)
 
-# Compute global curve approximation of datapoints within bound, E. (NURBS A9.10)
+# Auxiliar function for point projection: Solves for f(u) and f'(u) used in eqn 6.3 in NURBS.
 
 # Inputs:
-# - m : there are m+1 data points to approximate
-# - Q : data points to approximate
-# - p : degree of approximating curve
-# - E : maximum error allowance for approximating curve
-# - knotplacement : knot placement scheme (centripetal, or chordlength)
+# - u : knot value
+# - Q : point to project
+# - C : curve point at u
+# - dC : first curve derivative at u
+# - ddC : second curve derivative at u
 
 # Outputs:
-# - n : there are n+1 control points for approximating curve
-# - U : knot vector for approximating curve
-# - P : Control points of approximating curve
+# - fu : f(u)
+# - fprimeu : f'(u)
 # """
-# function globalcurveapproximation(m,Q,p,E; knotplacement="centripetal")
+# function f(u,Q,C,dC,ddC)
 
-#     #compute ubar and load into ub[]
-#     ub = Splines.computeubar(m,Q,knotplacement)
-#     #set U and P to be the degree 1 curve interpolating Q
-#     U = [0.0; ub; 1.0]
-#     P = copy(Q)
-#     ek = zeros(m+1)
-#     n = m
+#     fu = LinearAlgebra.dot(dC,C-Q)
+#     fprimeu = LinearAlgebra.dot(ddC,(C-Q)) + LinearAlgebra.norm(dC)^2
 
-#     for deg=1:p+1
-#         ek,n,U,P = Splines.removeknotsboundcurve(n,deg,U,P,ub,ek,E)
-#         if deg == p
+#     return fu, fprimeu
+
+# end
+
+# """
+#     projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
+
+# Run convergence criteria loop (Newton iteration), returning the knot value that satisfies the criteria.
+
+# Inputs:
+# - n : there are n+1 control points, P
+# - p : curve degree
+# - U : knot vector
+# - P : control points
+# - ui : the parametric start point
+# - Q : the point to project
+# - eps1 : tolerance for points being on the curve
+# - eps2 : tolerance for points being projected on the curve
+# - a : the lower bound of the span we're checking
+# - b : the upper bound of the span we're checking
+# - closed : boolean whether spline is closed or open
+
+# Outputs:
+# - uip1 : the final knot calculated after criteria are met
+# """
+# function projectionloop(n,p,U,P,ui,Q,eps1,eps2,a=0.0,b=1.0; closed=false)
+#     local uip1
+#     while true
+
+#         ## Check criteria
+#         CK = Splines.curvederivatives1(n, p, U, P, ui, 1)
+#         C = CK[1,:]
+#         dC = CK[2,:]
+#         #criteria 1: are they the same point on the spline
+#         crit1 = LinearAlgebra.norm(C-Q)
+#         #criteria 2: are they aligned
+#         num2 = LinearAlgebra.norm(LinearAlgebra.dot(dC,(C-Q)))
+#         den2 = LinearAlgebra.norm(dC)*LinearAlgebra.norm(C-Q)
+#         crit2 = num2/den2
+#         #if criteria 1 or 2 is not met
+#         if crit1 > eps1 || crit2 > eps2
+#             ##compute a new uip1
+#             # update u to be next value
+#             # println("ui= ", ui)
+#             #calculate C(u_i) and C'(u_i)
+#             CK = Splines.curvederivatives1(n, p, U, P, ui, 2)
+#             C = CK[1,:]
+#             dC = CK[2,:]
+#             ddC = CK[3,:]
+#             # println("ui= ", ui)
+#             # println("Q= ", Q)
+#             # println("C= ", C)
+#             # println("dC= ", dC)
+#             # println("ddC= ", ddC)
+
+#             #calculate f(u_i) and f'(u_i)
+#             fu, fprimeu = Splines.f(ui,Q,C,dC,ddC)
+#             #calculate u_{i+1}
+#             uip1 = ui - fu/fprimeu
+#             # println("uip1: ", uip1)
+
+#             ##check criteria 3 and 4
+#             #criteria 3: is the point beyond the spline ends? if so, adjust the point
+#             if closed == false
+#                 if uip1 < a
+#                     uip1 = a
+#                 elseif uip1 > b
+#                     uip1 = b
+#                 end
+#             else
+#                 if uip1 < a
+#                     uip1 = b - (a - uip1)
+#                 elseif uip1 > b
+#                     uip1 = a + (uip1 - b)
+#                 end
+#             end
+
+#             #criteria 4: Was the change in points very small?
+#             crit4 = LinearAlgebra.norm((uip1-ui)*dC)
+#             # println("it's: ", crit1 <= eps1 , crit2 <= eps2 , crit4 <= eps1)
+#             #if any of criteria 1, 2, or 4 is satisfied, break.
+#             if crit1 <= eps1 || crit2 <= eps2 || crit4 <= eps1
+#                 #crit1 means the point is on the spline
+#                 #crit2 means the point is properly projected
+#                 #crit4 means the point is off the end point of the spline.
+#                 break
+#             end
+
+#             ui = uip1
+
+#         else #if both were satisfied, then we're done.
+#             uip1 = ui
 #             break
 #         end
 
-#         #let U be the knot vector obtained by degree elevating Uh from deg to deg+1 (this is simply increasing the mulitplicities of each knot by 1. No need for degreeelevatecurve function)
-#         uniqueknot = unique(U)
-
-#         insert!(U,1,0)
-#         knot2add = 0
-#         nextidx = 1
-#         for i=2:length(uniqueknot)
-#             nextidx = findnext(y->y!=knot2add,U,nextidx)
-#             knot2add = uniqueknot[i]
-#             insert!(U,nextidx,knot2add)
-#         end
-
-#         #reset n
-#         n = length(U) - deg - 1
-
-#         #fit a least squares curve to the Q_k, using n, ub, degree=deg+1, and new knot vector U to get new control pointsopen
-#         #! THIS IS BEING BROKEN RIGHT NOW, NEED TO FIGURE IT OUT...
-#         U, P = Splines.leastsquarescurve(Q,m,n,deg+1,ub,U,knotplacement=knotplacement)
-
-#         #project all Q_k to current curve to get R_k = C(u_k).
-#         #! YOU ARE HERE
-#         R = projectpoints(n,p,U,P,Q)
-
-#         #Update ek and ub
-#         for i=1:length(ek)
-#             ek[i] = LinearAlgebra.norm(Q[i,:]-R[i,:])
-#         end
-#         ub = U #? Not sure how this works...
-
-
 #     end
 
-#     return n, U, P
+#     return uip1
+
 # end
+
+# """
+#     projectpoints(n,p,U,P,Q,eps1=1e-10,eps2=1e-10,ncheckvals=100)
+
+# Project points, Q, onto spline, returning projected points, R.
+
+# Inputs:
+# - n : there are n+1 control points, P
+# - p : curve degree
+# - U : knot vector
+# - P : control points
+# - Q : points to project
+# - eps1 : tolerance for points being on the curve
+# - eps2 : tolerance for points being projected on the curve
+# - ncheckvals : number of points used to look for good starting points.
+
+# Outputs:
+# - uproj : knot values on curve where Q has been projected
+# - R : the projected points.
+# """
+# function projectpoints(n,p,U,P,Q; eps1=eps(),eps2=eps(),ncheckvals=1000) #TODO check what tolerances are good.
+#     #weight control points
+#     Pw = [P ones(length(P[:,1]))]
+
+#     ##find start values, u0
+#     #setup a somewhat fine distribution of candidates
+#     ucheck = collect(range(0,stop=1,length=ncheckvals))
+
+#     #get curve points at knot values we're comparing
+#     Ccheck = zeros(ncheckvals,length(Pw[1,:]))
+#     for i=1:ncheckvals
+#         Ccheck[i,:] = Splines.curvepoint(n, p, U, Pw, ucheck[i])
+#     end
+#     Ccheck = Ccheck[:,1:end-1]
+#     #get distances for each candidate start points and find minimum for each point, Q
+#     u0 = zeros(length(Q[:,1]))
+#     for i=1:length(Q[:,1])
+#         mindist = Inf
+#         for j=1:ncheckvals
+#             dist = LinearAlgebra.norm(Q[i,:]-Ccheck[j,:])
+#             if dist < mindist
+#                 mindist = dist
+#                 u0[i] = ucheck[j]
+#             end
+#         end
+#     end
+
+#     #for each u0, find the parametric value associated with the point's projection onto the curve.
+#     uproj = zeros(length(Q[:,1]))
+#     for i=1:length(uproj)
+#         uproj[i] = Splines.projectionloop(n,p,U,P,u0[i],Q[i,:],eps1,eps2)
+#     end
+
+#     #return projected curve points, R_k
+#     Pw = [P ones(length(P[:,1]))]
+#     R = zeros(length(Q[:,1]),length(Pw[1,:]))
+#     for i=1:length(uproj)
+#         R[i,:] = curvepoint(n, p, U, Pw, uproj[i])
+#     end
+
+#     return uproj, R
+
+# end
+
