@@ -12,9 +12,9 @@ zerobased(arr) = OffsetArray(arr, 0:length(arr)-1)
 export BSpline
 export curvepoint, curvederivatives, curvederivativecontrolpoints
 export globalcurveinterpolation, leastsquarescurve
-include("bspline.jl")
+include("BSpline.jl")
 
 export NURBS  # also defines (overloaded) curvepoint, curvederivatives
-include("nurbs.jl")
+include("NURBS.jl")
 
 end # module
