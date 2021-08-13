@@ -17,5 +17,5 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/byuflowlab/Splies.jl.git"
+    repo = "github.com/byuflowlab/Splines.jl.git"
 )
