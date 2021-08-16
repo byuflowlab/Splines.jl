@@ -1,11 +1,11 @@
 """
     BSpline(degree, knots, ctrlpts)
 
-Construct a b-spline object
+Construct a B-Spline object
 
 # Arguments
 - `deg::Integer`: degree
-- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1) 
+- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1)
 - `ctrlpts::Vector{Vector{Float64}}`:: control points.  outer index is number of control points, inner index of dimensionality of point.
 """
 struct BSpline{TF, TI}
@@ -22,14 +22,14 @@ end
 
 # Arguments
 - `deg::Integer`: degree
-- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1) 
+- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1)
 - `u`::Float64`: nondimensional location we are searching for
 
 # Returns
 - `span::Integer`: corresponding index i for u between knots_i and knots_i+1
 """
 function getspanindex(deg, knots, u)
-    
+
     n = length(knots) - deg - 2
     U = OffsetArray(knots, 0:length(knots)-1)
 
@@ -61,7 +61,7 @@ end
 
 # Arguments
 - `deg::Integer`: degree
-- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1) 
+- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1)
 - `u`::Float64`: nondimensional location we are searching for
 - `span::Integer`: corresponding index i for u between knots_i and knots_i+1 (computed from getspanindex)
 
@@ -148,7 +148,7 @@ end
 """
     basisfunctionsderivatives(span, deg, knots, u, n)
 
-(private function) Calculate the non-vanishing basis functions and derivatives of the B-Spline of order ``p```, 
+(private function) Calculate the non-vanishing basis functions and derivatives of the B-Spline of order ``p```,
 defined by knots U at parametric point, ``u``. (NURBS A 2.3)
 
 # Arguments
@@ -162,11 +162,11 @@ defined by knots U at parametric point, ``u``. (NURBS A 2.3)
 - `ders::Matrix{Float}`: [0..n, 0..p]  ders[0, :] function values, ders[1: :], first derivatives, etc.
 """
 function basisfunctionsderivatives(span, deg, knots, u, n)
-    
+
     U = OffsetArray(knots, 0:length(knots)-1)
     p = deg
     i = span
-    
+
     ndu = OffsetArray(zeros(p+1, p+1), 0:p, 0:p)
     a = OffsetArray(zeros(2, p+1), 0:1, 0:p)
     ders = OffsetArray(zeros(n+1, p+1), 0:n, 0:p)
@@ -226,7 +226,7 @@ function basisfunctionsderivatives(span, deg, knots, u, n)
     end
 
     return ders
-end 
+end
 
 
 
@@ -241,7 +241,7 @@ Evaluate point on B-spline curve (NURBS, A3.1)
 - `C::Vector{Float}`: point in ND space
 """
 function curvepoint(bspline::BSpline, u)
-    
+
     P = OffsetArray(bspline.ctrlpts, 0:length(bspline.ctrlpts)-1)
     p = bspline.degree
 
@@ -259,7 +259,7 @@ end
 """
     curvederivatives(bspline, u, d)
 
-Compute a curve point and its derivatives up do the dth derivative at parametric point, ``u``. 
+Compute a curve point and its derivatives up do the dth derivative at parametric point, ``u``.
 (NURBS, A3.2)
 
 # Arguments
@@ -512,7 +512,7 @@ function leastsquarescurve(pts, nctrl, deg)
             # Rx[j] += N * Rk[i, 1]
             # Ry[j] += N * Rk[i, 2]
         end
-    end    
+    end
 
     # --- ctrlpts -----
     NN = Nm'*Nm
