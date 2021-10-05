@@ -5,7 +5,7 @@ Construct a NURBS object
 
 # Arguments
 - `deg::Integer`: degree
-- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1) 
+- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1)
 - `weights::Vector{Float64}`:: a corresponding vector of weights
 - `ctrlpts::Vector{Vector{Float64}}`:: control points.  outer index is number of control points, inner index of dimensionality of point.
 """
@@ -14,6 +14,42 @@ struct NURBS{TF, TI}
     knots::Vector{TF}
     weights::Vector{TF}
     ctrlpts::Vector{Vector{TF}}
+end
+
+"""
+get_degree
+
+return degree of spline
+"""
+function get_degree(nurbs)
+    return nurbs.degree
+end
+
+"""
+get_knots
+
+return knot vector of spline
+"""
+function get_knots(nurbs)
+    return nurbs.knots
+end
+
+"""
+get_weights
+
+return weights of spline
+"""
+function get_weights(nurbs)
+    return nurbs.weights
+end
+
+"""
+get_ctrlpts
+
+return control points of spline
+"""
+function get_ctrlpts(nurbs)
+    return nurbs.ctrlpts
 end
 
 """
@@ -31,13 +67,13 @@ function curvepoint(nurbs::NURBS, u)
     if u > nurbs.knots[end] || u < nurbs.knots[1]
         error("parametric point, u, is outside of knot range, U")
     end
-    
+
     n = length(nurbs.ctrlpts) - 1
     # P = OffsetArray(nurbs.ctrlpts, 0:n)
     w = nurbs.weights
     Pw = [[p*w[i]; w[i]] for (i, p) in enumerate(nurbs.ctrlpts)]
     Pw = OffsetArray(Pw, 0:n)
-    
+
     p = nurbs.degree
 
     span = getspanindex(p, nurbs.knots, u)
@@ -53,7 +89,7 @@ end
 """
     curvederivatives(nurbs, u, d)
 
-Compute a curve point and its derivatives up do the dth derivative at parametric point, ``u``. 
+Compute a curve point and its derivatives up do the dth derivative at parametric point, ``u``.
 (NURBS, A3.2)
 
 # Arguments
@@ -81,7 +117,7 @@ function curvederivatives(nurbs::NURBS, u, d)
     # initialize
     du = min(d, nurbs.degree)
     CK = OffsetArray(Vector{Vector{Float64}}(undef, du+1), 0:du)
-    
+
     # algorithm A 4.2
     for k = 0:d
         v = Aders[k]
@@ -95,93 +131,115 @@ function curvederivatives(nurbs::NURBS, u, d)
 end
 
 
-# """
-#     curveknotinsertion(np, p, UP, Pw, u, k, s, r)
+"""
+    curveknotinsertion(np, p, UP, Pw, u, k, s, r)
 
-# Compute a new curve from knot insertion. Using the formula:
+Compute a new curve from knot insertion. Using the formula:
 
-# ```math
-# \\mathbf{Q}_{i, r}^w = \\alpha_{i, r} \\mathbf{Q}_{i, r-1}^w + (1-\\alpha_{i, r}) \\mathbf{Q}_{i-1, r-1}^w
-# ```
+```math
+\\mathbf{Q}_{i, r}^w = \\alpha_{i, r} \\mathbf{Q}_{i, r-1}^w + (1-\\alpha_{i, r}) \\mathbf{Q}_{i-1, r-1}^w
+```
 
-# where
-# ```math
-# \\alpha_{i, r} =
-# \\begin{cases}
-#      1 & i \\leq k-p+r-1 \\\\
-#      \\frac{\\bar{u} - u_i}{u_{i+p-r+1} - \\bar{u}_i} & k-p+r \\leq i\\leq k-s \\\\
-#      0 & i \\geq k-s+1
-# \\end{cases}
-# ```
+where
+```math
+\\alpha_{i, r} =
+\\begin{cases}
+     1 & i \\leq k-p+r-1 \\\\
+     \\frac{\\bar{u} - u_i}{u_{i+p-r+1} - \\bar{u}_i} & k-p+r \\leq i\\leq k-s \\\\
+     0 & i \\geq k-s+1
+\\end{cases}
+```
 
-# (see NURBS eqn 5.15 and A5.1)
+(see NURBS eqn 5.15 and A5.1)
 
-# Inputs:
-# - np : the number of control points minus 1 (the index of the last control point) before insertion
-# - p : the curve order
-# - UP : the knot vector before insertion
-# - Pw : the set of weighted control points and weights before insertion
-# - u : the parametric point of interest
-# - k : the span index at which the knot is to be inserted.
-# - s : numer of instances of the new knot alrady present in the knot vector, UP
-# - r : number of times the new knot is inserted (it is assumed that `` r+s \\leq p `` )
+Inputs:
+- np : the number of control points minus 1 (the index of the last control point) before insertion
+- p : the curve order
+- UP : the knot vector before insertion
+- Pw : the set of weighted control points and weights before insertion
+- u : the knot to be added
+- k : the span index at which the knot is to be inserted.
+- s : numer of instances of the new knot alrady present in the knot vector, UP
+- r : number of times the new knot is inserted (it is assumed that `` r+s \\leq p `` )
 
-# Outputs:
-# - nq : the number of control points minus 1 (the index of the last control point) after insertion
-# - UQ : the knot vector after insertion
-# - Qw : the set of weighted control points and weights after insertion
-# """
-# function curveknotinsertion(np, p, UP, Pw, u, k, s, r)
-#     mp = np+p+1
-#     nq = np+r
+Outputs:
+- nq : the number of control points minus 1 (the index of the last control point) after insertion
+- UQ : the knot vector after insertion
+- Qw : the set of weighted control points and weights after insertion
+"""
+function curveknotinsertion(nurbs, u, r)
 
-#     #initialize output vectors
-#     UQ = zeros(length(UP)+r)
-#     Qw = zeros(nq+1, length(Pw[1, :]))
-#     Rw = zeros(p+1, length(Pw[1, :]))
-#     #Load new knot vector
-#     for i=0:k
-#         UQ[i+1] = UP[i+1]
-#     end
+    # Get spline components
+    p = nurbs.degree
+    UP = zerobased(nurbs.knots)
+    P = zerobased(nurbs.ctrlpts)
+    w = zerobased(nurbs.weights)
+    #get weighted control points
+    Pw = zerobased([zeros(length(P[1, :][1])) for _ in 1:length(P)])
+    for i=0:length(Pw[:,1])-1
+        Pw[i] = [P[i].*w[i]; w[i]]
+    end
 
-#     for i=1:r
-#         UQ[k+i+1] = u
-#     end
+    #define iteration bounds for algorithm
+    np = length(P[:,1])-1
+    mp = np+p+1
+    nq = np+r
 
-#     for i=k+1:mp
-#         UQ[i+1+r] = UP[i+1]
-#     end
+    # get index where to insert
+    k = getspanindex(p, UP, u)
+    # count current number of repeated instances of knot to insert
+    s = count(i->i==u,UP)
 
-#     #Save unaltered control points
-#     for i=0:k-p
-#         Qw[i+1, :] = Pw[i+1, :]
-#     end
+    #initialize output vectors
+    UQ = zerobased(zeros(length(UP)+r))
+    Qw = zerobased([zeros(length(Pw[1, :][1])) for _ in 1:nq+1])
+    Rw = zerobased([zeros(length(Pw[1, :][1])) for _ in 1:p+1])
 
-#     for i=k-s:np
-#         Qw[i+1+r, :] = Pw[i+1, :]
-#     end
 
-#     for i=0:p-s
-#         Rw[i+1, :] = Pw[k-p+i+1, :]
-#     end
-#     #insert new knot r times
-#     L = 0.0 #initialize L in this scope
-#     for j=1:r
-#         L = k-p+j
-#         for i=0:p-j-s
-#             alpha = (u-UP[L+i+1])/(UP[i+1+k+1]-UP[L+i+1])
-#             Rw[i+1, :] = alpha*Rw[i+1+1, :] + (1.0-alpha)*Rw[i+1, :]
-#         end
-#         Qw[L+1, :] = Rw[0+1, :]
-#         Qw[k+r-j-s+1, :] = Rw[p-j-s+1, :]
-#     end
-#     #Load remaining control points
-#     for i=L+1:k-s
-#         Qw[i+1, :] = Rw[i+1-L, :]
-#     end
+    #TODO: below this point, change all i+1 to just i's
+    #Load new knot vector
+    for i=0:k
+        UQ[i] = UP[i]
+    end
 
-#     return nq, UQ, Qw
-# end
+    for i=1:r
+        UQ[k+i] = u
+    end
+
+    for i=k+1:mp
+        UQ[i+r] = UP[i]
+    end
+
+    #Save unaltered control points
+    for i=0:k-p
+        Qw[i] = Pw[i]
+    end
+
+    for i=k-s:np
+        Qw[i+r] = Pw[i]
+    end
+
+    for i=0:p-s
+        Rw[i] = Pw[k-p+i]
+    end
+    #insert new knot r times
+    L = 0.0 #initialize L in this scope
+    for j=1:r
+        L = k-p+j
+        for i=0:p-j-s
+            alpha = (u-UP[L+i])/(UP[i+k+1]-UP[L+i])
+            Rw[i] = alpha*Rw[i+1] + (1.0-alpha)*Rw[i]
+        end
+        Qw[L] = Rw[0]
+        Qw[k+r-j-s] = Rw[p-j-s]
+    end
+    #Load remaining control points
+    for i=L+1:k-s
+        Qw[i] = Rw[i-L]
+    end
+
+    return nq, onebased(UQ), onebased(Qw)
+end
 
 # """
 #     refineknotvectorcurve(n, p, U, Pw, X, r)
