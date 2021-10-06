@@ -16,13 +16,5 @@ Note that this package has been created primarily for research purposes, so only
 
 
 
-<!-- ## Links to Function Descriptions
-Descriptions of available methods along with example implementations can be found on the functions page.
-
-```@contents
-Pages = ["Functions.md"]
-Depth = 2 -->
-```
-
-## About
-[License](license.md)
+<!-- ## About
+[License](license.md) -->

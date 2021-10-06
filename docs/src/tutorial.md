@@ -1,7 +1,12 @@
 # Quick Start Guide
 
 ## B-Spline Objects
-
+```@meta
+CurrentModule = Splines
+DocTestSetup = quote
+    using Splines
+end
+```
 ```@docs
 Splines.BSpline
 ```
