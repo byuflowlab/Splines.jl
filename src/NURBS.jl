@@ -241,76 +241,97 @@ function curveknotinsertion(nurbs, u, r)
     return nq, onebased(UQ), onebased(Qw)
 end
 
-# """
-#     refineknotvectorcurve(n, p, U, Pw, X, r)
+"""
+    refineknotvectorcurve(n, p, U, Pw, X, r)
 
-# Refine curve knot vector using NURBS A5.4.
+Refine curve knot vector using NURBS A5.4.
 
-# This algorithm is simply a knot insertion algorithm that allows for multiple knots to be added simulataneously, i.e., a knot refinement procedure.
+This algorithm is simply a knot insertion algorithm that allows for multiple knots to be added simulataneously, i.e., a knot refinement procedure.
 
-# Inputs:
-# - n : the number of control points minus 1 (the index of the last control point) before insertion
-# - p : the curve order
-# - U : the knot vector before insertion
-# - Pw : the set of weighted control points and weights before insertion
-# - X : elements, in ascending order, to be inserted into U (elements should be repeated according to their multiplicities, e.g., if x and y have multiplicites 2 and 3, X = [x,x,y,y,y])
-# - r : length of X vector - 1
+Inputs:
+- n : the number of control points minus 1 (the index of the last control point) before insertion
+- p : the curve order
+- U : the knot vector before insertion
+- Pw : the set of weighted control points and weights before insertion
+- X : elements, in ascending order, to be inserted into U (elements should be repeated according to their multiplicities, e.g., if x and y have multiplicites 2 and 3, X = [x,x,y,y,y])
+- r : length of X vector - 1
 
-# Outputs:
-# - Ubar : the knot vector after insertion
-# - Qw : the set of weighted control points and weights after insertion
-# """
-# function refineknotvectorcurve(n, p, U, Pw, X, r)
+Outputs:
+- Ubar : the knot vector after insertion
+- Qw : the set of weighted control points and weights after insertion
+"""
+function refineknotvectorcurve(nurbs, X)
 
-#     m = n+p+1
-#     a = getspanindex(n,p,X[0+1],U)
-#     b = getspanindex(n,p,X[r+1],U)
-#     b += 1
-#     Qw = zeros(length(Pw[:,1])+r+1,length(Pw[1,:]))
-#     Ubar = zeros(length(U)+r+1)
-#     for j=0:a-p
-#         Qw[j+1,:] = Pw[j+1,:]
-#     end
 
-#     for j=b-1:n
-#         Qw[j+r+1+1,:] = Pw[j+1,:]
-#     end
+     # Get spline components
+     p = nurbs.degree
+     U = zerobased(nurbs.knots)
+     P = zerobased(nurbs.ctrlpts)
+     w = zerobased(nurbs.weights)
+     #get weighted control points
+     Pw = zerobased([zeros(length(P[1, :][1])) for _ in 1:length(P)])
+     for i=0:length(Pw)-1
+         Pw[i] = [P[i].*w[i]; w[i]]
+     end
 
-#     for j=0:a
-#         Ubar[j+1] = U[j+1]
-#     end
+     #zero base input knots
+    X = zerobased(X)
+    r = length(X)-1
 
-#     for j=b+p:m
-#         Ubar[j+r+1+1] = U[j+1]
-#     end
-#     i = b+p-1
-#     k = b+p+r
-#     # if r < 0
-#         for j=r:-1:0
-#             while X[j+1]<=U[i+1] && i>a
-#                 Qw[k-p-1+1,:] = Pw[i-p-1+1,:]
-#                 Ubar[k+1] = U[i+1]
-#                 k -=1
-#                 i -=1
-#             end
-#             Qw[k-p-1+1,:] = Qw[k-p+1,:]
-#             for ell=1:p
-#                 ind = k-p+ell
-#                 alpha = Ubar[k+ell+1] - X[j+1]
-#                 if abs(alpha)==0.0
-#                     Qw[ind-1+1,:] = Qw[ind+1,:]
-#                 else
-#                     alpha /= Ubar[k+ell+1] - U[i-p+ell+1]
-#                     Qw[ind-1+1,:] = alpha*Qw[ind-1+1,:] + (1.0-alpha)*Qw[ind+1,:]
-#                 end
-#             end
-#             Ubar[k+1] = X[j+1]
-#             k -= 1
-#         end
-#     # end
+    #set up indices
+    n = length(P)-1
+    m = n+p+1
+    a = Splines.getspanindex(p,U,X[0])
+    b = Splines.getspanindex(p,U,X[r])
+    b += 1
 
-#     return Ubar, Qw
-# end
+    #initialize outputs
+    Qw = zerobased([zeros(length(Pw[1, :][1])) for _ in 1:length(Pw)+r+1])
+    Ubar = zerobased(zeros(length(U)+r+1))
+
+    for j=0:a-p
+        Qw[j] = Pw[j]
+    end
+
+    for j=b-1:n
+        Qw[j+r+1] = Pw[j]
+    end
+
+    for j=0:a
+        Ubar[j] = U[j]
+    end
+
+    for j=b+p:m
+        Ubar[j+r+1] = U[j]
+    end
+    i = b+p-1
+    k = b+p+r
+
+    for j=r:-1:0
+        while X[j]<=U[i] && i>a
+            Qw[k-p-1,:] = Pw[i-p-1,:]
+            Ubar[k] = U[i]
+            k -=1
+            i -=1
+        end
+        Qw[k-p-1,:] = Qw[k-p,:]
+        for ell=1:p
+            ind = k-p+ell
+            alpha = Ubar[k+ell] - X[j]
+            if abs(alpha)==0.0
+                Qw[ind-1,:] = Qw[ind,:]
+            else
+                alpha /= Ubar[k+ell] - U[i-p+ell]
+                Qw[ind-1,:] = alpha*Qw[ind-1,:] + (1.0-alpha)*Qw[ind,:]
+            end
+        end
+        Ubar[k] = X[j]
+        k -= 1
+    end
+
+
+    return onebased(Ubar), onebased(Qw)
+end
 
 # """
 #     removecurveknot(n,p,U,Pw,u,r,s,num;d,tolcheck)

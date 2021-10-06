@@ -66,51 +66,55 @@ end
     @test isapprox(Qw, Qwbyhand, atol=1e-15)
 end
 
-# @testset "NURBS: Knot Insertion - Repeated Knot" begin
-#     UP = [0,0,0,0,1,2,3,4,5,5,5,5]
-#     u = 2
-#     p = 3
-#     P = [0 0; 1 1; 2 0; 3 0; 4 1; 3 2; 2 2; 1 1]
-#     w = [1 1 1 1 1 1 1 1]
-#     Pw = [0 0 1; 1 1 1; 2 0 1; 3 0 1; 4 1 1; 3 2 1; 2 2 1; 1 1 1]
-#     np = length(P[:,1])-1
-#     k = 5
-#     s = 1
-#     r = 1
+@testset "NURBS: Knot Insertion - Repeated Knot" begin
+    UP = [0,0,0,0,1,2,3,4,5,5,5,5]
+    u = 2
+    p = 3
+    P = [[0,0],[1,1],[2,0],[3,0],[4,1],[3,2],[2,2],[1,1]]
+    w = [1;1;1;1;1;1;1;1]
+    Pw = [[0.,0,1],[1,1,1],[2,0,1],[3,0,1],[4,1,1],[3,2,1],[2,2,1],[1,1,1]]
+    np = length(P[:,1])-1
+    k = 5
+    s = 1
+    r = 1
 
-#     Qwbyhand = zeros(np+r+1,length(Pw[1,:]))
-#     Qwbyhand[1:3,:] = Pw[1:3,:]
-#     Qwbyhand[4,:] = 2/3*Pw[4,:] + 1/3*Pw[3,:]
-#     Qwbyhand[5,:] = 1/3*Pw[5,:] + 2/3*Pw[4,:]
-#     Qwbyhand[6,:] = Pw[5,:]
-#     Qwbyhand[7:end,:] = Pw[6:end,:]
+    Qwbyhand = [zeros(length(Pw[1, :][1])) for _ in 1:np+r+1]
+    Qwbyhand[1:3] = Pw[1:3]
+    Qwbyhand[4] = 2/3*Pw[4] + 1/3*Pw[3]
+    Qwbyhand[5] = 1/3*Pw[5] + 2/3*Pw[4]
+    Qwbyhand[6] = Pw[5]
+    Qwbyhand[7:end] = Pw[6:end]
 
-#     nq, UQ, Qw = Splines.curveknotinsertion(np, p, UP, Pw, u, k, s, r)
+    nurbs = Splines.NURBS(p,UP,w,P)
+    nq, UQ, Qw = Splines.curveknotinsertion(nurbs, u, r)
 
-#     @test nq == np+r
-#     @test UQ == [0,0,0,0,1,2,2,3,4,5,5,5,5]
-#     @test isapprox(Qw, Qwbyhand, atol=1e-15)
-# end
+    @test nq == np+r
+    @test UQ == [0,0,0,0,1,2,2,3,4,5,5,5,5]
+    @test isapprox(Qw, Qwbyhand, atol=1e-15)
+end
 
-# @testset "NURBS: Knot Insertion - Multiple Knots" begin
-#     U = [0,0,0,0,1,2,3,4,5,5,5,5]
-#     X = [1.5, 2.5]
-#     p = 3
-#     P = [0 0; 1 1; 2 0; 3 0; 4 1; 3 2; 2 2; 1 1]
-#     w = [1 1 1 1 1 1 1 1]
-#     Pw = [0 0 1; 1 1 1; 2 0 1; 3 0 1; 4 1 1; 3 2 1; 2 2 1; 1 1 1]
-#     n = length(P[:,1])-1
-#     r = length(X)-1
+@testset "NURBS: Knot Insertion - Multiple Knots" begin
+    U = [0,0,0,0,1,2,3,4,5,5,5,5]
+    X = [1.5, 2.5]
+    p = 3
+    P = [[0,0],[1,1],[2,0],[3,0],[4,1],[3,2],[2,2],[1,1]]
+    w = [1;1;1;1;1;1;1;1]
+    Pw = [[0,0,1],[1,1,1],[2,0,1],[3,0,1],[4,1,1],[3,2,1],[2,2,1],[1,1,1]]
+    n = length(P[:,1])-1
+    r = length(X)-1
 
-#     Ubar, Qwcalcd = Splines.refineknotvectorcurve(n, p, U, Pw, X, r)
+    nurbs = Splines.NURBS(p,U,w,P)
+    Ubar, Qwcalcd = Splines.refineknotvectorcurve(nurbs, X)
 
-#     @test Ubar == [0.0,0.0,0.0,0.0,1.0,1.5,2.0,2.5,3.0,4.0,5.0,5.0,5.0,5.0]
+    @test Ubar == [0.0,0.0,0.0,0.0,1.0,1.5,2.0,2.5,3.0,4.0,5.0,5.0,5.0,5.0]
 
-#     nq, UQ, Qw = Splines.curveknotinsertion(n, p, U, Pw, X[1], 4, 0, 1)
-#     _, UQ, Qw = Splines.curveknotinsertion(nq, p, UQ, Qw, X[2], 6, 0, 1)
+    nurbs = Splines.NURBS(p,U,w,P)
+    nq, UQ, Qw = Splines.curveknotinsertion(nurbs, X[1], r)
+    nurbs = Splines.NURBS(p,UQ,getindex.(Qw,3),getindex.(Qw,[1:2]))
+    _, UQ, Qw = Splines.curveknotinsertion(nurbs, X[2], r)
 
-#     @test isapprox(Qwcalcd, Qw, atol=1e-15)
-# end
+    @test isapprox(Qwcalcd, Qw, atol=1e-15)
+end
 
 # @testset "NURBS: Unweighted 1 Degree Elevation" begin
 #     U = [0,0,0,0,3/10,7/10,1,1,1,1]
