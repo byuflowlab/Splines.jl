@@ -1,6 +1,6 @@
 # Splines.jl
 ```@meta
-CurrentModule = Splines
+using Splines
 ```
 
 Splines.jl is a work-in-progress splines package focusing on Bézier curves, Basis Splines (B-Splines), and Non-uniform Rational B-Splines (NURBS). As of now, the available methods are transcribed from algorithms, or created from equations found in *The NURBS Book* by Les Piegl and Wayne Tiller, hereafter referred to as "NURBS" when referencing equations and/or algorithms.

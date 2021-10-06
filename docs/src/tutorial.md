@@ -3,6 +3,7 @@
 ## B-Spline Objects
 
 ```@docs
+using Splines
 Splines.BSpline
 ```
 
