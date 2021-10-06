@@ -1,15 +1,6 @@
 # Quick Start Guide
 
 ## B-Spline Objects
-```@meta
-CurrentModule = Splines
-DocTestSetup = quote
-    using Splines
-end
-```
-```@docs
-Splines.BSpline
-```
 
 To begin, we need to choose a degree, knot vector, and control points to create a B-Spline.
 
@@ -40,7 +31,7 @@ bspline = Splines.BSpline(degree,knots,ctrlpts) # BSpline object
 
 ## NURBS Objects
 ```@docs
-Splines.NURBS
+    Splines.NURBS
 ```
 
 A NURBS Object is nearly identical to a BSpline object with one exception: NURBS objects include weights for the control points, one for each.
