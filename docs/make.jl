@@ -1,7 +1,7 @@
 using Documenter, Splines
 
 makedocs(
-    modules = [Documenter, Splines],
+    modules = [Splines],
     format = Documenter.HTML(),
     pages = [
         "Intro" => "index.md",
