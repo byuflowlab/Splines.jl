@@ -16,5 +16,5 @@ Note that this package has been created primarily for research purposes, so only
 
 
 
-<!-- ## About
-[License](license.md) -->
+## About
+[License](license.md)
