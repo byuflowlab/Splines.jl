@@ -492,212 +492,233 @@ end
 # end
 
 
-# """
-#     degreeelevatecurve(n,p,U,Pw,t)
+"""
+    degreeelevatecurve(n,p,U,Pw,t)
 
-# Raise degree of spline from p to p `` +t``, `` t \\geq 1 `` by computing the new control point vector and knot vector.
+Raise degree of spline from p to p `` +t``, `` t \\geq 1 `` by computing the new control point vector and knot vector.
 
-# Knots are inserted to divide the spline into equivalent Bezier Curves. These curves are then degree elevated using the following equation.
+Knots are inserted to divide the spline into equivalent Bezier Curves. These curves are then degree elevated using the following equation.
 
-# ```math
-# \\mathbf{P}^t_i = \\sum^{\\textrm{min}(p,i)}_{j=\\textrm{max}(0,i-t)} \\frac{\\binom{p}{j} \\binom{t}{i-j} \\mathbf{P}_j}{\\binom{p+t}{i}}~,~~~~~i=0,...,p+t
-# ```
-# where `` \\mathbf{P}^t_i `` are the degree elevated control points after `` t `` -degree elevations
+```math
+\\mathbf{P}^t_i = \\sum^{\\textrm{min}(p,i)}_{j=\\textrm{max}(0,i-t)} \\frac{\\binom{p}{j} \\binom{t}{i-j} \\mathbf{P}_j}{\\binom{p+t}{i}}~,~~~~~i=0,...,p+t
+```
+where `` \\mathbf{P}^t_i `` are the degree elevated control points after `` t `` -degree elevations
 
-# Finally, the excess knots are removed and the degree elevated spline is returned.
+Finally, the excess knots are removed and the degree elevated spline is returned.
 
-# (see NURBS eqn 5.36, A5.9)
+(see NURBS eqn 5.36, A5.9)
 
-# Inputs:
-# - n : the number of control points minus 1 (the index of the last control point) before degree elevation
-# - p : the curve order
-# - U : the knot vector before degree elevation
-# - Pw : the set of weighted control points and weights before degree elevation
-# - t : the number of degrees to elevate, i.e. the new curve degree is p+t
+Inputs:
+- n : the number of control points minus 1 (the index of the last control point) before degree elevation
+- p : the curve order
+- U : the knot vector before degree elevation
+- Pw : the set of weighted control points and weights before degree elevation
+- t : the number of degrees to elevate, i.e. the new curve degree is p+t
 
-# Outputs:
-# - nh : the number of control points minus 1 (the index of the last control point) after degree elevation
-# - Uh : the knot vector after degree elevation
-# - Qw : the set of weighted control points and weights after degree elevation
-# """
-# function degreeelevatecurve(n,p,U,Pw,t)
-#     m = n+p+1
-#     ph = p+t
-#     ph2 = Int(floor(ph/2))
+Outputs:
+- nh : the number of control points minus 1 (the index of the last control point) after degree elevation
+- Uh : the knot vector after degree elevation
+- Qw : the set of weighted control points and weights after degree elevation
+"""
+function degreeelevatecurve(nurbs,t)
 
-#     #initialize in outer scope:
-#     oldr = 0
-#     ub = 0
+    # Get spline components
+    p = nurbs.degree
+    U = zerobased(nurbs.knots)
+    P = zerobased(nurbs.ctrlpts)
+    w = zerobased(nurbs.weights)
+    #get weighted control points
+    Pw = zerobased([zeros(length(P[1, :][1])) for _ in 1:length(P)])
+    for i=0:length(Pw)-1
+        Pw[i] = [P[i].*w[i]; w[i]]
+    end
 
-#     #initialize local arrays
-#     bezalfs = zeros(p+t+1,p+1) #coefficients for degree elevating the bezier segments
-#     bpts = zeros(p+1,length(Pw[1,:])) #pth-degree bezier control points of the current section
-#     ebpts = zeros(p+t+1,length(Pw[1,:])) #(p+t)th-degree bezier control points of the current section
-#     nextbpts = zeros(p-1,length(Pw[1,:])) #leftmost control points of next bezier segement
-#     alfs = zeros(p-1) #knot insertion alphas.
+    #set up indices
+    n = length(P)-1
+    m = n+p+1
+    ph = p+t
+    ph2 = Int(floor(ph/2))
 
-#     #initialize outputs:
-#     s = length(unique(U)) - 2 #number of unique internal knots
-#     Uh = ones( length(U) + t*(s+2) ) #mhat eqn 5.33 is m + (s+2)xt
-#     Qw = ones( length(Pw[:,1]) + t*(s+1), length(Pw[1,:]) ) #nhat eqn 5.32 is n+(s+1)xt
+    #initialize in outer scope:
+    oldr = 0
+    ub = 0
 
-#     #compute bezier degree elevation coefficients
-#     bezalfs[ph+1,p+1] = 1.0 #bezalfs are coefficients for degree elevating the Bezier segments
-#     bezalfs[0+1,0+1] = 1.0
-#     for i=1:ph2
-#         inv = 1.0/binomialcoeff(ph,i)
-#         for j=Int(max(0,i-t)):Int(min(p,i))
-#             bezalfs[i+1,j+1] = inv*binomialcoeff(p,j)*binomialcoeff(t,i-j) #from eqn 5.36
-#         end
-#     end
-#     for i = ph2+1:ph-1
-#         for j=Int(max(0,i-t)):Int(min(p,i))
-#             bezalfs[i+1,j+1] = bezalfs[ph-i+1,p-j+1]
-#         end
-#     end
-#     mh = ph
-#     kind = ph+1
-#     r = -1
-#     a = p
-#     b = p+1
-#     cind = 1
-#     ua = U[0+1]
+    #initialize local arrays
+    bezalfs = zerobased([zerobased(zeros(p+1)) for _ in 1:p+t+1]) #coefficients for degree elevating the bezier segments
+    bpts = zerobased([zeros(length(Pw[1,:][1])) for _ in 1:p+1]) #pth-degree bezier control points of the current section
+    ebpts = zerobased([zeros(length(Pw[1,:][1])) for _ in 1:p+t+1]) #(p+t)th-degree bezier control points of the current section
+    nextbpts = zerobased([zeros(length(Pw[1,:][1])) for _ in 1:p-1]) #leftmost control points of next bezier segement
+    alfs = zerobased(zeros(p-1)) #knot insertion alphas.
 
-#     #first new control point is first old control point
-#     Qw[0+1,:] = Pw[0+1,:]
+    #initialize outputs:
+    s = length(unique(U)) - 2 #number of unique internal knots
 
-#     #fill in first p+t new U vector points (same as old vector with +t multiplicity)
-#     for i=0:ph
-#         Uh[i+1] = ua
-#     end
 
-#     #initialize first bezier segment
-#     for i=0:p
-#         bpts[i+1,:] = Pw[i+1,:] #bpts are the pth-degree bezier control points of the current segment
-#     end
+    Uh = zerobased(ones( length(U) + t*(s+2) )) #mhat eqn 5.33 is m + (s+2)xt
+    Qw = zerobased([zeros(length(Pw[1, :][1])) for _ in 1:length(Pw[:,1]) + t*(s+1)])
+    #nhat eqn 5.32 is n+(s+1)xt
 
-#     #big loop through knot vector starting after first elements of Qw and Uh vectors.
-#     while b<m
-#         i = b
-#         while b<m && U[b+1] == U[b+1+1] #incrememnt b for knots with multiplicities.
-#             b += 1
-#         end
-#         mul = b-i+1
-#         mh += mul + t
-#         ub = U[b+1]
-#         oldr = r
-#         r = p-mul
+    #compute bezier degree elevation coefficients
+    bezalfs[ph][p] = 1.0 #bezalfs are coefficients for degree elevating the Bezier segments
+    bezalfs[0][0] = 1.0
+    for i=1:ph2
+        inv = 1.0/Splines.binomialcoeff(ph,i)
+        mpi = Int(min(p,i))
+        for j=Int(max(0,i-t)):mpi
+            bezalfs[i][j] = inv*Splines.binomialcoeff(p,j)*Splines.binomialcoeff(t,i-j) #from eqn 5.36
+        end
+    end
+    for i = ph2+1:ph-1
+        mpi = Int(min(p,i))
+        for j=Int(max(0,i-t)):mpi
+            bezalfs[i][j] = bezalfs[ph-i][p-j]
+        end
+    end
+    mh = ph
+    kind = ph+1
+    r = -1
+    a = p
+    b = p+1
+    cind = 1
+    ua = U[0]
 
-#         #insert knot u(b) r times
-#         if oldr > 0
-#             lbz = Int(floor((oldr + 2)/2))
-#         else
-#             lbz = 1
-#         end
-#         if r>0
-#             rbz = Int(ph-floor((r+1)/2))
-#         else
-#             rbz = ph
-#         end
+    #first new control point is first old control point
+    Qw[0] = copy(Pw[0])
 
-#         #insert knot to get bezier segment
-#         if r>0
-#             numer = ub - ua
-#             for k=p:-1:mul+1
-#                 alfs[k-mul-1+1] = numer/(U[a+k+1]-ua) #knot insertion alphas
-#             end
-#             for j=1:r
-#                 save = r-j
-#                 s = mul+j
-#                 for k=p:-1:s
-#                     bpts[k+1,:] = alfs[k-s+1]*bpts[k+1,:] + (1.0-alfs[k-s+1])*bpts[k-1+1,:]
-#                 end #for
-#                 nextbpts[save+1,:] = bpts[p+1,:] #nextbpts are the leftmost control points of the next bezier segment
-#             end #for
-#         end #insert knot if
+    #fill in first p+t new U vector points (same as old vector with +t multiplicity)
+    for i=0:ph
+        Uh[i] = ua
+    end
 
-#         #degree elevate bezier
-#         for i=lbz:ph
-#             #only points lbz,...,ph are used below
-#             ebpts[i+1,:] .= 0.0 #ebpts are the (p+t)th-degree bezier control points of the current segment.
-#             for j = Int(max(0,i-t)):Int(min(p,i))
-#                 ebpts[i+1,:] += bezalfs[i+1,j+1]*bpts[j+1,:]
-#             end
-#         end #for; degree elevation
+    #initialize first bezier segment
+    for i=0:p
+        bpts[i] = Pw[i] #bpts are the pth-degree bezier control points of the current segment
+    end
 
-#         #must remove knot u=U[a] oldr times
-#         if oldr > 1
-#             first = kind-2
-#             last = kind
-#             den = ub-ua
-#             bet = (ub-Uh[kind-1+1])/den
+    #big loop through knot vector starting after first elements of Qw and Uh vectors.
+    while b<m
+        i = b
+        while b<m && U[b] == U[b+1] #incrememnt b for knots with multiplicities.
+            b += 1
+        end
+        mul = b-i+1
+        mh += mul + t
+        ub = U[b]
+        oldr = r
+        r = p-mul
 
-#             #knot removal loop
-#             if oldr-1 >= 1 #need to make sure this is true since julia does a loop no matter what, when C evaluates condition first.
-#                 for tr=1:oldr-1
-#                     i = first
-#                     j = last
-#                     kj = j-kind+1
+        #insert knot u(b) r times
+        if oldr > 0
+            lbz = Int(floor((oldr + 2)/2))
+        else
+            lbz = 1
+        end
+        if r>0
+            rbz = Int(ph-floor((r+1)/2))
+        else
+            rbz = ph
+        end
 
-#                     #loop and compute the new control points for one removal step
-#                     while j-i > tr
-#                         if i < cind
-#                             alf = (ub - Uh[i+1])/(ua-Uh[i+1])
-#                             Qw[i+1,:] = alf*Qw[i+1,:] + (1.0-alf)*Qw[i-1+1,:]
-#                         end #if
-#                         if j >= lbz
-#                             if j-tr <= kind-ph+oldr
-#                                 gam = (ub-Uh[j-tr+1])/den
-#                                 ebpts[kj+1,:] = gam*ebpts[kj+1,:]+(1.0-gam)*ebpts[kj+1+1,:]
-#                             else
-#                                 ebpts[kj+1,:] = bet*ebpts[kj+1,:]+(1.0-bet)*ebpts[kj+1+1,:]
-#                             end #if
-#                         end #if
-#                         i += 1
-#                         j -= 1
-#                         kj -= 1
-#                     end #while
-#                     first -= 1
-#                     last += 1
-#                 end #for tr
-#             end #if oldr is big enough
-#         end #if; remove knot u=U[a]
+        #insert knot to get bezier segment
+        if r>0
+            numer = ub - ua
+            for k=p:-1:mul+1
+                alfs[k-mul-1] = numer/(U[a+k]-ua) #knot insertion alphas
+            end
+            for j=1:r
+                save = r-j
+                s = mul+j
+                for k=p:-1:s
+                    bpts[k] = alfs[k-s]*bpts[k] + (1.0-alfs[k-s])*bpts[k-1]
+                end #for
+                nextbpts[save] = bpts[p] #nextbpts are the leftmost control points of the next bezier segment
+            end #for
+        end #insert knot if
+        #degree elevate bezier
+        for i=lbz:ph
+            #only points lbz,...,ph are used below
+            ebpts[i] .= 0.0 #ebpts are the (p+t)th-degree bezier control points of the current segment.
+            mpi = Int(min(p,i))
+            for j = Int(max(0,i-t)):mpi
+                ebpts[i] += bezalfs[i][j]*bpts[j]
+            end
+        end #for; degree elevation
 
-#         #load the knot ua
-#         if a != p
-#             for i=0:ph-oldr-1
-#                 Uh[kind+1] = ua
-#                 kind += 1
-#             end #for
-#         end #if
+        #must remove knot u=U[a] oldr times
+        if oldr > 1
+            front = kind-2
+            back = kind
+            den = ub-ua
+            bet = (ub-Uh[kind-1])/den
 
-#         #load ctrl pts into Qw
-#         for j=lbz:rbz
-#             Qw[cind+1,:] = ebpts[j+1,:]
-#             cind += 1
-#         end
+            #knot removal loop
+            if oldr-1 >= 1 #need to make sure this is true since julia does a loop no matter what, when C evaluates condition first.
+                for tr=1:oldr-1
+                    i = front
+                    j = back
+                    kj = j-kind+1
 
-#         #set up for next pass through loop
-#         if b < m
-#             for j=0:r-1
-#                 bpts[j+1,:] = nextbpts[j+1,:]
-#             end
-#             for j=r:p
-#                 bpts[j+1,:] = Pw[b-p+j+1,:]
-#             end
-#             a = b
-#             b += 1
-#             ua = ub
-#         else #end knot
-#             for i=0:ph
-#                 Uh[kind+i+1] = ub
-#             end
-#         end
-#     end #while b<m
-#     nh = mh-ph-1
+                    #loop and compute the new control points for one removal step
+                    while j-i > tr
+                        if i < cind
+                            alf = (ub - Uh[i])/(ua-Uh[i])
+                            Qw[i] = alf.*Qw[i] + (1.0-alf).*Qw[i-1]
+                        end #if
+                        if j >= lbz
+                            if j-tr <= kind-ph+oldr
+                                gam = (ub-Uh[j-tr])/den
+                                ebpts[kj] = gam.*ebpts[kj]+(1.0-gam).*ebpts[kj+1]
+                            else
+                                ebpts[kj] = bet.*ebpts[kj]+(1.0-bet).*ebpts[kj+1]
+                            end #if
+                        end #if
+                        i += 1
+                        j -= 1
+                        kj -= 1
+                    end #while
+                    front -= 1
+                    back += 1
+                end #for tr
+            end #if oldr is big enough
+        end #if; remove knot u=U[a]
 
-# return nh, Uh, Qw
-# end
+        #load the knot ua
+        if a != p
+            for i=0:ph-oldr-1
+                Uh[kind] = ua
+                kind += 1
+            end #for
+        end #if
+
+        #load ctrl pts into Qw
+        for j=lbz:rbz
+            Qw[cind] = copy(ebpts[j])
+            cind += 1
+        end
+
+        #set up for next pass through loop
+        if b < m
+            for j=0:r-1
+                bpts[j] = nextbpts[j]
+            end
+            for j=r:p
+                bpts[j] = Pw[b-p+j]
+            end
+            a = b
+            b += 1
+            ua = ub
+        else #end knot
+            for i=0:ph
+                Uh[kind+i] = ub
+            end
+        end
+
+    end #while b<m
+    nh = mh-ph-1
+
+    return nh, onebased(Uh), onebased(Qw)
+
+end
 
 
 # # """

@@ -116,68 +116,75 @@ end
     @test isapprox(Qwcalcd, Qw, atol=1e-15)
 end
 
-# @testset "NURBS: Unweighted 1 Degree Elevation" begin
-#     U = [0,0,0,0,3/10,7/10,1,1,1,1]
-#     p = 3
-#     P = [-1 0; -1.5 1; -0.5 2; 0.5 2; 1.5 1; 1 0]
-#     w = [1 1 1 1 1 1]
-#     Pw = [-1 0 1; -1.5 1 1; -0.5 2 1; 0.5 2 1; 1.5 1 1; 1 0 1]
-#     n = length(P[:,1])-1
-#     t = 1
+@testset "NURBS: Unweighted 1 Degree Elevation" begin
+    U = [0,0,0,0,3/10,7/10,1,1,1,1]
+    p = 3
+    P = [[-1,0],[-1.5,1],[-0.5,2],[0.5,2],[1.5,1],[1,0]]
+    w = [1.;1;1;1;1;1]
+    Pw = [[-1,0,1],[-1.5,1,1],[-0.5,2,1],[0.5,2,1],[1.5,1,1],[1,0,1]]
+    n = length(P[:,1])-1
+    t = 1
 
-#     nh, Uh, Qw = Splines.degreeelevatecurve(n,p,U,Pw,t)
+    nurbs = Splines.NURBS(p,U,w,P)
+    nh, Uh, Qw = Splines.degreeelevatecurve(nurbs,t)
 
-#     @test Uh == [0,0,0,0,0,3/10,3/10,7/10,7/10,1,1,1,1,1]
-
-
-#     s = length(unique(U)) - 2 #number of unique internal knots
-#     @test nh == n + t*(s+1)
+    @test Uh == [0,0,0,0,0,3/10,3/10,7/10,7/10,1,1,1,1,1]
 
 
-#     curvepoints = collect(0:0.01:1)
-#     Cw1 = zeros(length(curvepoints), length(Pw[1, :]))
-#     for i = 1:length(curvepoints)
-#     Cw1[i, :] = Splines.curvepoint(n, p, U, Pw, curvepoints[i])
-#     end
-
-#     Cw2 = zeros(length(curvepoints), length(Pw[1, :]))
-#     for i = 1:length(curvepoints)
-#     Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
-#     end
-#     @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
-# end
+    s = length(unique(U)) - 2 #number of unique internal knots
+    @test nh == n + t*(s+1)
 
 
-# @testset "NURBS: Unweighted 2 Degree Elevation" begin
-#     U = [0,0,0,0,3/10,7/10,1,1,1,1]
-#     p = 3
-#     P = [-1 0; -1.5 1; -0.5 2; 0.5 2; 1.5 1; 1 0]
-#     w = [1 1 1 1 1 1]
-#     Pw = [-1 0 1; -1.5 1 1; -0.5 2 1; 0.5 2 1; 1.5 1 1; 1 0 1]
-#     n = length(P[:,1])-1
-#     t = 2
+    curvepoints = collect(0:0.01:1)
+    Cw1 = zeros(length(curvepoints), length(P[1, :][1]))
+    for i = 1:length(curvepoints)
+        Cw1[i, :] = Splines.curvepoint(nurbs, curvepoints[i])
+    end
 
-#     nh, Uh, Qw = Splines.degreeelevatecurve(n,p,U,Pw,t)
+    Cw2 = zeros(length(curvepoints), length(P[1, :][1]))
+    for i = 1:length(curvepoints)
+        nurbs2 = Splines.NURBS(p+t, Uh, getindex.(Qw,3),getindex.(Qw,[1:2]))
+        Cw2[i, :] = Splines.curvepoint(nurbs2, curvepoints[i])
+    end
 
-#     @test Uh == [0,0,0,0,0,0,3/10,3/10,3/10,7/10,7/10,7/10,1,1,1,1,1,1]
+    @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
+
+end
 
 
-#     s = length(unique(U)) - 2 #number of unique internal knots
-#     @test nh == n + t*(s+1)
+@testset "NURBS: Unweighted 2 Degree Elevation" begin
+    U = [0,0,0,0,3/10,7/10,1,1,1,1]
+    p = 3
+    P = [[-1,0],[-1.5,1],[-0.5,2],[0.5,2],[1.5,1],[1,0]]
+    w = [1.;1;1;1;1;1]
+    Pw = [[-1,0,1],[-1.5,1,1],[-0.5,2,1],[0.5,2,1],[1.5,1,1],[1,0,1]]
+    n = length(P[:,1])-1
+    t = 2
+
+    nurbs = Splines.NURBS(p,U,w,P)
+    nh, Uh, Qw = Splines.degreeelevatecurve(nurbs,t)
+
+    @test Uh == [0,0,0,0,0,0,3/10,3/10,3/10,7/10,7/10,7/10,1,1,1,1,1,1]
 
 
-#     curvepoints = collect(0:0.01:1)
-#     Cw1 = zeros(length(curvepoints), length(Pw[1, :]))
-#     for i = 1:length(curvepoints)
-#     Cw1[i, :] = Splines.curvepoint(n, p, U, Pw, curvepoints[i])
-#     end
-#     Cw2 = zeros(length(curvepoints), length(Pw[1, :]))
-#     for i = 1:length(curvepoints)
-#     Cw2[i, :] = Splines.curvepoint(nh, p+t, Uh, Qw, curvepoints[i])
-#     end
+    s = length(unique(U)) - 2 #number of unique internal knots
+    @test nh == n + t*(s+1)
 
-#     @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
-# end
+
+    curvepoints = collect(0:0.01:1)
+    Cw1 = zeros(length(curvepoints), length(P[1, :][1]))
+    for i = 1:length(curvepoints)
+        Cw1[i, :] = Splines.curvepoint(nurbs, curvepoints[i])
+    end
+
+    Cw2 = zeros(length(curvepoints), length(P[1, :][1]))
+    for i = 1:length(curvepoints)
+        nurbs2 = Splines.NURBS(p+t, Uh, getindex.(Qw,3),getindex.(Qw,[1:2]))
+        Cw2[i, :] = Splines.curvepoint(nurbs2, curvepoints[i])
+    end
+
+    @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
+end
 
 
 # @testset "NURBS: Basis Function Tests" begin

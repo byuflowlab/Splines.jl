@@ -7,7 +7,7 @@ using OffsetArrays
 onebased = OffsetArrays.no_offset_view
 zerobased(arr) = OffsetArray(arr, 0:length(arr)-1)
 
-# include("bezier.jl")
+include("Bezier.jl")
 
 export BSpline
 export curvepoint, curvederivatives, curvederivativecontrolpoints
