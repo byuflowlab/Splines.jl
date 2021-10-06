@@ -53,6 +53,68 @@ function get_ctrlpts(nurbs)
 end
 
 """
+    nurbsbasis(u,p,d,U,w)
+
+Get rational basis functions and derivatives.
+
+```math
+R_{i,p}(u) = \\frac{N_{i,p}(u)w_i}{\\sum_{j=0}^n N_{j,p}(u)w_j}
+```
+
+where `` N_{i,p}(u ) `` are B-Spline Basis Functions and `` w_i `` are weights associated with the NURBS control points.
+
+(see NURBS eqn 4.2)
+
+Inputs:
+
+- u : parametric point of interest
+- p : the curve order
+- d : the max derivative order (n ≦ p)
+- U : the knot vector
+- w : control point weights
+
+"""
+function nurbsbasis(nurbs,u,d)
+
+    # Get spline components
+    p = nurbs.degree
+    U = zerobased(nurbs.knots)
+    w = zerobased(nurbs.weights)
+
+    #get the span index
+    i = Splines.getspanindex(p, U, u)
+
+    #get B-Spline basis functions and derivatives for numerator
+    bases = Splines.basisfunctionsderivatives(i,p,U,u, d)
+    #separate out the bases and their derivatives
+    N = bases[0,:]
+    dN = bases[1,:] #only doing first derivates right now
+
+    #number of non-zero basis functions at parametric point, u.
+    numbasisfunctions = length(N)-1
+    Nw = 0
+    dNw = 0
+
+    #calculate the denomenator values
+    for j=0:numbasisfunctions
+        Nw += N[j] .* w[j]
+        dNw += dN[j] .* w[j]
+    end
+
+    #Calculate each of the non-zero Rational Basis functions and first derivatives
+    R = zerobased(zeros(length(N)))
+    dR = zerobased(zeros(size(N)))
+    for j=0:numbasisfunctions
+        R[j] = N[j]/Nw .* w[j]
+        dR[j] = w[j] .* (Nw*dN[j] - dNw*N[j]) ./ Nw^2
+    end
+
+    return onebased(R), onebased(dR)
+end
+
+
+
+"""
 Evaluate point on rational b-spline curve (NURBS, A4.1)
 
 # Arguments
@@ -849,59 +911,4 @@ end
 # #     nh = mh-ph-1
 # #     return 0
 # # end
-
-# """
-#     nurbsbasis(u,p,d,U,w)
-
-# Get rational basis functions and derivatives.
-
-# ```math
-# R_{i,p}(u) = \\frac{N_{i,p}(u)w_i}{\\sum_{j=0}^n N_{j,p}(u)w_j}
-# ```
-
-# where `` N_{i,p}(u ) `` are B-Spline Basis Functions and `` w_i `` are weights associated with the NURBS control points.
-
-# (see NURBS eqn 4.2)
-
-# Inputs:
-
-# - u : parametric point of interest
-# - p : the curve order
-# - d : the max derivative order (n ≦ p)
-# - U : the knot vector
-# - w : control point weights
-
-# """
-# function nurbsbasis(u,p,d,U,w)
-#     #get the span index
-#     n = length(U)-1-p
-#     i = getspanindex(n, p, u, U)
-
-#     #get B-Spline basis functions and derivatives for numerator
-#     bases = Splines.basisfunctionsderivatives(i+1,u,p,d,U)
-#     #separate out the bases and their derivatives
-#     N = bases[1,:]
-#     dN = bases[2,:] #only doing first derivates right now
-
-#     #number of non-zero basis functions at parametric point, u.
-#     numbasisfunctions = length(N)
-#     Nw = 0
-#     dNw = 0
-
-#     #calculate the denomenator values
-#     for j=1:numbasisfunctions
-#         Nw += N[j] .* w[j]
-#         dNw += dN[j] .* w[j]
-#     end
-
-#     #Calculate each of the non-zero Rational Basis functions and first derivatives
-#     R = zeros(length(N))
-#     dR = zeros(size(N))
-#     for j=1:numbasisfunctions
-#         R[j] = N[j]/Nw .* w[j]
-#         dR[j] = w[j] .* (Nw*dN[j] - dNw*N[j]) ./ Nw^2
-#     end
-
-#     return R, dR
-# end
 

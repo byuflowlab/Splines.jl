@@ -187,13 +187,15 @@ end
 end
 
 
-# @testset "NURBS: Basis Function Tests" begin
-#     U = [0,0,0,1,2,3,4,4,5,5,5]
-#     w = [1,1,1,1,1,1,1]
-#     u = 5/2
-#     p = 2
-#     n = 1
-#     R, dR = Splines.nurbsbasis(u,p,n,U,w)
-#     @test [1/8,6/8,1/8] == R
-#     @test [-1/2, 0, 1/2] == dR
-# end #Basis Functions Tests
+@testset "NURBS: Basis Function Tests" begin
+    U = [0,0,0,1,2,3,4,4,5,5,5]
+    P = [[0,0],[0,0],[0,0],[0,0],[0,0],[0,0],[0,0]]
+    w = [1;1;1;1;1;1;1]
+    u = 5/2
+    p = 2
+    d = 1
+    nurbs = Splines.NURBS(p,U,w,P)
+    R, dR = Splines.nurbsbasis(nurbs,u,d)
+    @test [1/8,6/8,1/8] == R
+    @test [-1/2, 0, 1/2] == dR
+end #Basis Functions Tests
