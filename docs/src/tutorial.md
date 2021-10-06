@@ -35,7 +35,7 @@ bspline = Splines.BSpline(degree,knots,ctrlpts) # BSpline object
 
 ## NURBS Objects
 ```@docs
-Splines.BSpline
+Splines.NURBS
 ```
 
 A NURBS Object is nearly identical to a BSpline object with one exception: NURBS objects include weights for the control points, one for each.
