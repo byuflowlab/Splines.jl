@@ -5,9 +5,9 @@ Construct a NURBS object
 
 # Arguments
 - `deg::Integer`: degree
-- `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1)
-- `weights::Vector{Float64}`:: a corresponding vector of weights
-- `ctrlpts::Vector{Vector{Float64}}`:: control points.  outer index is number of control points, inner index of dimensionality of point.
+- `knots::Vector{Float}`:: a knot vector (u_0, ... u_n+1)
+- `weights::Vector{Float}`:: a corresponding vector of weights
+- `ctrlpts::Vector{Vector{Float}}`:: control points.  outer index is number of control points, inner index of dimensionality of point.
 """
 struct NURBS{TF, TI}
     degree::TI
@@ -68,8 +68,13 @@ where `` N_{i,p}(u ) `` are B-Spline Basis Functions and `` w_i `` are weights a
 Inputs:
 
 - `nurbs::NURBS`: nurbs object
-- `u::Float64`: parametric point of interest
+- `u::Float`: parametric point of interest
 - `d::Integer`: the max derivative order (n ≦ p)
+
+Outputs:
+
+- `R::Vector{Float}`: array of basis function values at the point u.
+- `dR::Vector{Float}`: vector of basis function derivative values at point u.
 
 """
 function nurbsbasis(nurbs,u,d)
@@ -187,7 +192,7 @@ function curvederivatives(nurbs::NURBS, u, d)
         CK[k] = v / wders[0]
     end
 
-    return CK  #onebased(CK)
+    return onebased(CK)
 end
 
 
@@ -214,15 +219,19 @@ where
 
 Inputs:
 - `nurbs::NURBS`: nurbs object
-- `u::Float64`: the knot to be added
+- `u::Float`: the knot to be added
 - `r::Integer`: number of times the new knot is inserted (it is assumed that `` r+s \\leq p `` )
 
 Outputs:
-- nq : the number of control points minus 1 (the index of the last control point) after insertion
-- UQ : the knot vector after insertion
-- Qw : the set of weighted control points and weights after insertion
+
+if separated_outputs == true
+    - `nq::Integer`: the number of control points minus 1 (the index of the last control point) after insertion
+    - `UQ::Vector{Float}`: the knot vector after insertion
+    - `Qw::Vector{Vector{Float}}`: the set of weighted control points and weights after insertion
+else
+    -`nurbsout::NURBS`: new nurbs object
 """
-function curveknotinsertion(nurbs::NURBS, u, r)
+function curveknotinsertion(nurbs::NURBS, u, r; separated_outputs=false)
 
     # Get spline components
     p = nurbs.degree
@@ -293,7 +302,12 @@ function curveknotinsertion(nurbs::NURBS, u, r)
         Qw[i] = Rw[i-L]
     end
 
-    return nq, onebased(UQ), onebased(Qw)
+    if separated_outputs
+        return nq, onebased(UQ), onebased(Qw)
+    else
+        nurbsout = NURBS(p,onebased(UQ),getindex.(onebased(Qw),3),getindex.(onebased(Qw),[1:2]))
+        return nurbsout
+    end
 end
 
 """
@@ -305,13 +319,17 @@ This algorithm is simply a knot insertion algorithm that allows for multiple kno
 
 Inputs:
 - `nurbs::NURBS`: nurbs object
-- `X::Vector{Float64}`: elements, in ascending order, to be inserted
+- `X::Vector{Float}`: elements, in ascending order, to be inserted
 
 Outputs:
-- Ubar : the knot vector after insertion
-- Qw : the set of weighted control points and weights after insertion
+
+if separated_outputs == true
+    - Ubar : the knot vector after insertion
+    - Qw : the set of weighted control points and weights after insertion
+else
+    -`nurbsout::NURBS`: new nurbs object
 """
-function refineknotvectorcurve(nurbs::NURBS, X)
+function refineknotvectorcurve(nurbs::NURBS, X;separated_outputs=false)
 
 
      # Get spline components
@@ -380,8 +398,14 @@ function refineknotvectorcurve(nurbs::NURBS, X)
         k -= 1
     end
 
+    if separated_outputs
+        return onebased(Ubar), onebased(Qw)
+    else
+        nurbsout = NURBS(p,onebased(Ubar),getindex.(onebased(Qw),3),getindex.(onebased(Qw),[1:2]))
+        return nurbsout
+    end
 
-    return onebased(Ubar), onebased(Qw)
+    return
 end
 
 # """
@@ -564,11 +588,16 @@ Inputs:
 - `t::Integer`: the number of degrees to elevate, i.e. the new curve degree is p+t
 
 Outputs:
-- nh : the number of control points minus 1 (the index of the last control point) after degree elevation
-- Uh : the knot vector after degree elevation
-- Qw : the set of weighted control points and weights after degree elevation
+
+if separated_outputs == true
+    - nh : the number of control points minus 1 (the index of the last control point) after degree elevation
+    - Uh : the knot vector after degree elevation
+    - Qw : the set of weighted control points and weights after degree elevation
+
+else
+    -`nurbsout::NURBS`: new nurbs object
 """
-function degreeelevatecurve(nurbs::NURBS,t)
+function degreeelevatecurve(nurbs::NURBS,t;separated_outputs=false)
 
     # Get spline components
     p = nurbs.degree
@@ -764,7 +793,13 @@ function degreeelevatecurve(nurbs::NURBS,t)
     end #while b<m
     nh = mh-ph-1
 
-    return nh, onebased(Uh), onebased(Qw)
+    if separated_outputs
+        return nh, onebased(Uh), onebased(Qw)
+    else
+        nurbsout = NURBS(p+t,onebased(Uh),getindex.(onebased(Qw),3),getindex.(onebased(Qw),[1:2]))
+        return nurbsout
+    end
+
 
 end
 

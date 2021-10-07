@@ -27,16 +27,16 @@ end
     C = curvepoint(nurbs, u)
     CK = curvederivatives(nurbs, u, d)
 
-    @test C == CK[0]  # function value
-    @test CK[1] == [0.0, 2.0]  # first derivative
-    @test CK[2] == [-4.0, 0.0]  # second derivative
+    @test C == CK[1]  # function value
+    @test CK[2] == [0.0, 2.0]  # first derivative
+    @test CK[3] == [-4.0, 0.0]  # second derivative
 
     u = 1
     C = curvepoint(nurbs, u)
     CK = curvederivatives(nurbs, u, d)
-    @test C == CK[0]
-    @test CK[1] == [-1, 0.0]
-    @test CK[2] == [1, -1]
+    @test C == CK[1]
+    @test CK[2] == [-1, 0.0]
+    @test CK[3] == [1, -1]
 end
 
 @testset "NURBS: Knot Insertion - Unique Knot" begin
@@ -59,11 +59,19 @@ end
     Qwbyhand[7:end,:] = Pw[6:end,:]
 
     nurbs = Splines.NURBS(p,UP,w,P)
-    nq, UQ, Qw = Splines.curveknotinsertion(nurbs, u, r)
+    nq, UQ, Qw = Splines.curveknotinsertion(nurbs, u, r,separated_outputs=true)
 
     @test nq == np+r
     @test UQ == [0,0,0,0,1,2,5/2,3,4,5,5,5,5]
     @test isapprox(Qw, Qwbyhand, atol=1e-15)
+
+    nurbs2 = Splines.curveknotinsertion(nurbs, u, r)
+    nurbs3 = Splines.NURBS(p,UQ,getindex.(Qw,3),getindex.(Qw,[1:2]))
+
+    @test nurbs2.degree == nurbs3.degree
+    @test nurbs2.knots == nurbs3.knots
+    @test nurbs2.weights == nurbs3.weights
+    @test nurbs2.ctrlpts == nurbs3.ctrlpts
 end
 
 @testset "NURBS: Knot Insertion - Repeated Knot" begin
@@ -86,7 +94,7 @@ end
     Qwbyhand[7:end] = Pw[6:end]
 
     nurbs = Splines.NURBS(p,UP,w,P)
-    nq, UQ, Qw = Splines.curveknotinsertion(nurbs, u, r)
+    nq, UQ, Qw = Splines.curveknotinsertion(nurbs, u, r,separated_outputs=true)
 
     @test nq == np+r
     @test UQ == [0,0,0,0,1,2,2,3,4,5,5,5,5]
@@ -104,14 +112,14 @@ end
     r = length(X)-1
 
     nurbs = Splines.NURBS(p,U,w,P)
-    Ubar, Qwcalcd = Splines.refineknotvectorcurve(nurbs, X)
+    Ubar, Qwcalcd = Splines.refineknotvectorcurve(nurbs, X,separated_outputs=true)
 
     @test Ubar == [0.0,0.0,0.0,0.0,1.0,1.5,2.0,2.5,3.0,4.0,5.0,5.0,5.0,5.0]
 
     nurbs = Splines.NURBS(p,U,w,P)
-    nq, UQ, Qw = Splines.curveknotinsertion(nurbs, X[1], r)
+    nq, UQ, Qw = Splines.curveknotinsertion(nurbs, X[1], r,separated_outputs=true)
     nurbs = Splines.NURBS(p,UQ,getindex.(Qw,3),getindex.(Qw,[1:2]))
-    _, UQ, Qw = Splines.curveknotinsertion(nurbs, X[2], r)
+    _, UQ, Qw = Splines.curveknotinsertion(nurbs, X[2], r,separated_outputs=true)
 
     @test isapprox(Qwcalcd, Qw, atol=1e-15)
 end
@@ -126,7 +134,7 @@ end
     t = 1
 
     nurbs = Splines.NURBS(p,U,w,P)
-    nh, Uh, Qw = Splines.degreeelevatecurve(nurbs,t)
+    nh, Uh, Qw = Splines.degreeelevatecurve(nurbs,t,separated_outputs=true)
 
     @test Uh == [0,0,0,0,0,3/10,3/10,7/10,7/10,1,1,1,1,1]
 
@@ -147,8 +155,14 @@ end
         Cw2[i, :] = Splines.curvepoint(nurbs2, curvepoints[i])
     end
 
-    @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
+    Cw3 = zeros(length(curvepoints), length(P[1, :][1]))
+    for i = 1:length(curvepoints)
+        nurbs3 = Splines.degreeelevatecurve(nurbs,t)
+        Cw3[i, :] = Splines.curvepoint(nurbs3, curvepoints[i])
+    end
 
+    @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
+    @test isapprox(LinearAlgebra.norm(Cw1-Cw3),0.0,atol=1e-14)
 end
 
 
@@ -162,7 +176,7 @@ end
     t = 2
 
     nurbs = Splines.NURBS(p,U,w,P)
-    nh, Uh, Qw = Splines.degreeelevatecurve(nurbs,t)
+    nh, Uh, Qw = Splines.degreeelevatecurve(nurbs,t,separated_outputs=true)
 
     @test Uh == [0,0,0,0,0,0,3/10,3/10,3/10,7/10,7/10,7/10,1,1,1,1,1,1]
 
@@ -183,7 +197,14 @@ end
         Cw2[i, :] = Splines.curvepoint(nurbs2, curvepoints[i])
     end
 
+    Cw3 = zeros(length(curvepoints), length(P[1, :][1]))
+    for i = 1:length(curvepoints)
+        nurbs3 = Splines.degreeelevatecurve(nurbs,t)
+        Cw3[i, :] = Splines.curvepoint(nurbs3, curvepoints[i])
+    end
+
     @test isapprox(LinearAlgebra.norm(Cw1-Cw2),0.0,atol=1e-14)
+    @test isapprox(LinearAlgebra.norm(Cw1-Cw3),0.0,atol=1e-14)
 end
 
 
