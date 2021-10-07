@@ -17,7 +17,7 @@ struct NURBS{TF, TI}
 end
 
 """
-get_degree
+    get_degree(spline)
 
 return degree of spline
 """
@@ -26,7 +26,7 @@ function get_degree(nurbs)
 end
 
 """
-get_knots
+    get_knots(spline)
 
 return knot vector of spline
 """
@@ -35,16 +35,16 @@ function get_knots(nurbs)
 end
 
 """
-get_weights
+    get_weights(nurbs)
 
-return weights of spline
+return weights of NURBS spline
 """
 function get_weights(nurbs)
     return nurbs.weights
 end
 
 """
-get_ctrlpts
+    get_ctrlpts(spline)
 
 return control points of spline
 """
@@ -53,7 +53,7 @@ function get_ctrlpts(nurbs)
 end
 
 """
-    nurbsbasis(u,p,d,U,w)
+    nurbsbasis(nurbs, u, d)
 
 Get rational basis functions and derivatives.
 
@@ -67,11 +67,9 @@ where `` N_{i,p}(u ) `` are B-Spline Basis Functions and `` w_i `` are weights a
 
 Inputs:
 
-- u : parametric point of interest
-- p : the curve order
-- d : the max derivative order (n ≦ p)
-- U : the knot vector
-- w : control point weights
+- `nurbs::NURBS`: nurbs object
+- `u::Float64`: parametric point of interest
+- `d::Integer`: the max derivative order (n ≦ p)
 
 """
 function nurbsbasis(nurbs,u,d)
@@ -118,7 +116,7 @@ end
 Evaluate point on rational b-spline curve (NURBS, A4.1)
 
 # Arguments
-- `nurbs::NURBS: NURBS object`
+- `nurbs::NURBS`: NURBS object
 - `u::Float`: point on spline to evaluate at
 
 # Returns
@@ -194,7 +192,7 @@ end
 
 
 """
-    curveknotinsertion(np, p, UP, Pw, u, k, s, r)
+    curveknotinsertion(nurbs::NURBS, u, r)
 
 Compute a new curve from knot insertion. Using the formula:
 
@@ -215,21 +213,16 @@ where
 (see NURBS eqn 5.15 and A5.1)
 
 Inputs:
-- np : the number of control points minus 1 (the index of the last control point) before insertion
-- p : the curve order
-- UP : the knot vector before insertion
-- Pw : the set of weighted control points and weights before insertion
-- u : the knot to be added
-- k : the span index at which the knot is to be inserted.
-- s : numer of instances of the new knot alrady present in the knot vector, UP
-- r : number of times the new knot is inserted (it is assumed that `` r+s \\leq p `` )
+- `nurbs::NURBS`: nurbs object
+- `u::Float64`: the knot to be added
+- `r::Integer`: number of times the new knot is inserted (it is assumed that `` r+s \\leq p `` )
 
 Outputs:
 - nq : the number of control points minus 1 (the index of the last control point) after insertion
 - UQ : the knot vector after insertion
 - Qw : the set of weighted control points and weights after insertion
 """
-function curveknotinsertion(nurbs, u, r)
+function curveknotinsertion(nurbs::NURBS, u, r)
 
     # Get spline components
     p = nurbs.degree
@@ -304,25 +297,21 @@ function curveknotinsertion(nurbs, u, r)
 end
 
 """
-    refineknotvectorcurve(n, p, U, Pw, X, r)
+    refineknotvectorcurve(nurbs::NURBS, X)
 
 Refine curve knot vector using NURBS A5.4.
 
 This algorithm is simply a knot insertion algorithm that allows for multiple knots to be added simulataneously, i.e., a knot refinement procedure.
 
 Inputs:
-- n : the number of control points minus 1 (the index of the last control point) before insertion
-- p : the curve order
-- U : the knot vector before insertion
-- Pw : the set of weighted control points and weights before insertion
-- X : elements, in ascending order, to be inserted into U (elements should be repeated according to their multiplicities, e.g., if x and y have multiplicites 2 and 3, X = [x,x,y,y,y])
-- r : length of X vector - 1
+- `nurbs::NURBS`: nurbs object
+- `X::Vector{Float64}`: elements, in ascending order, to be inserted
 
 Outputs:
 - Ubar : the knot vector after insertion
 - Qw : the set of weighted control points and weights after insertion
 """
-function refineknotvectorcurve(nurbs, X)
+function refineknotvectorcurve(nurbs::NURBS, X)
 
 
      # Get spline components
@@ -555,7 +544,7 @@ end
 
 
 """
-    degreeelevatecurve(n,p,U,Pw,t)
+    degreeelevatecurve(nurbs::NURBS,t)
 
 Raise degree of spline from p to p `` +t``, `` t \\geq 1 `` by computing the new control point vector and knot vector.
 
@@ -571,18 +560,15 @@ Finally, the excess knots are removed and the degree elevated spline is returned
 (see NURBS eqn 5.36, A5.9)
 
 Inputs:
-- n : the number of control points minus 1 (the index of the last control point) before degree elevation
-- p : the curve order
-- U : the knot vector before degree elevation
-- Pw : the set of weighted control points and weights before degree elevation
-- t : the number of degrees to elevate, i.e. the new curve degree is p+t
+- `nurbs::NURBS`: nurbs object
+- `t::Integer`: the number of degrees to elevate, i.e. the new curve degree is p+t
 
 Outputs:
 - nh : the number of control points minus 1 (the index of the last control point) after degree elevation
 - Uh : the knot vector after degree elevation
 - Qw : the set of weighted control points and weights after degree elevation
 """
-function degreeelevatecurve(nurbs,t)
+function degreeelevatecurve(nurbs::NURBS,t)
 
     # Get spline components
     p = nurbs.degree
