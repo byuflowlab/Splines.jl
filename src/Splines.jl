@@ -19,4 +19,6 @@ include("BSpline.jl")
 export NURBS  # also defines (overloaded) curvepoint, curvederivatives
 include("NURBS.jl")
 
+include("utilities.jl")
+
 end # module
