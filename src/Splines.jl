@@ -3,6 +3,8 @@ module Splines
 using LinearAlgebra: norm
 using OffsetArrays
 
+import Roots
+
 # convenience functions
 onebased = OffsetArrays.no_offset_view
 zerobased(arr) = OffsetArray(arr, 0:length(arr)-1)
