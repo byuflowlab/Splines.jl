@@ -257,7 +257,6 @@ function curvepoint(bspline::BSpline, u)
 end
 
 
-
 """
     curvederivatives(bspline, u, d)
 
