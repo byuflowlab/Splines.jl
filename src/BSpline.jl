@@ -8,10 +8,10 @@ Construct a B-Spline object
 - `knots::Vector{Float64}`:: a knot vector (u_0, ... u_n+1)
 - `ctrlpts::Vector{Vector{Float64}}`:: control points.  outer index is number of control points, inner index of dimensionality of point.
 """
-struct BSpline{TF, TI}
+struct BSpline{TI, TF1, TF2, TA<:AbstractVector{TF2}}
     degree::TI
-    knots::Vector{TF}
-    ctrlpts::Vector{Vector{TF}}
+    knots::Vector{TF1}
+    ctrlpts::Vector{TA}
 end
 
 
@@ -161,17 +161,19 @@ defined by knots U at parametric point, ``u``. (NURBS A 2.3)
 # Returns
 - `ders::Matrix{Float}`: [0..n, 0..p]  ders[0, :] function values, ders[1: :], first derivatives, etc.
 """
-function basisfunctionsderivatives(span, deg, knots, u, n)
+function basisfunctionsderivatives(span, deg, knots::AbstractVector{T1}, u::T2, n) where {T1, T2}
 
     U = OffsetArray(knots, 0:length(knots)-1)
     p = deg
     i = span
 
-    ndu = OffsetArray(zeros(p+1, p+1), 0:p, 0:p)
-    a = OffsetArray(zeros(2, p+1), 0:1, 0:p)
-    ders = OffsetArray(zeros(n+1, p+1), 0:n, 0:p)
-    left = OffsetArray(zeros(p+1), 0:p)
-    right = OffsetArray(zeros(p+1), 0:p)
+    T = promote_type(T1, T2)
+
+    ndu = OffsetArray(zeros(T, p+1, p+1), 0:p, 0:p)
+    a = OffsetArray(zeros(T, 2, p+1), 0:1, 0:p)
+    ders = OffsetArray(zeros(T, n+1, p+1), 0:n, 0:p)
+    left = OffsetArray(zeros(T, p+1), 0:p)
+    right = OffsetArray(zeros(T, p+1), 0:p)
     ndu[0, 0] = 1.0
 
     for j = 1:p
@@ -270,17 +272,18 @@ Compute a curve point and its derivatives up do the dth derivative at parametric
 # Returns
 - `CK::Vector{Vector{Float}}`.  where CK[0] is the point, CK[1] the first derivative, and so on.
 """
-function curvederivatives(bspline::BSpline, u, d)
+function curvederivatives(bspline::BSpline{<:Any, T1, T2}, u::T3, d) where {T1, T2, T3}
     p = bspline.degree
     P = OffsetArray(bspline.ctrlpts, 0:length(bspline.ctrlpts)-1)
+    T = promote_type(T1, T2, T3)
 
     du = min(d, p)
     ndim = length(bspline.ctrlpts[1])
     # CK = OffsetArray(zeros(du+1, ndim), 0:du, 1:ndim)
-    CK = OffsetArray(Vector{Vector{Float64}}(undef, du+1), 0:du)
+    CK = OffsetArray(Vector{Vector{T}}(undef, du+1), 0:du)
 
     for k = p+1:d
-        CK[k] = zeros(ndim)
+        CK[k] = zeros(T, ndim)
     end
 
     span = getspanindex(p, bspline.knots, u)
@@ -1078,4 +1081,3 @@ end
 #     return uproj, R
 
 # end
-

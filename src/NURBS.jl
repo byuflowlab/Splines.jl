@@ -9,11 +9,11 @@ Construct a NURBS object
 - `weights::Vector{Float}`:: a corresponding vector of weights
 - `ctrlpts::Vector{Vector{Float}}`:: control points.  outer index is number of control points, inner index of dimensionality of point.
 """
-struct NURBS{TF, TI}
+struct NURBS{TI, TF1, TF2, TF3, TA<:AbstractVector{TF3}}
     degree::TI
-    knots::Vector{TF}
-    weights::Vector{TF}
-    ctrlpts::Vector{Vector{TF}}
+    knots::Vector{TF1}
+    weights::Vector{TF2}
+    ctrlpts::Vector{TA}
 end
 
 """
@@ -165,11 +165,13 @@ Compute a curve point and its derivatives up do the dth derivative at parametric
 # Returns
 - `CK::Vector{Vector{Float}}` where CK[1] is the point, CK[2] the first derivative, and so on.
 """
-function curvederivatives(nurbs::NURBS, u, d)
+function curvederivatives(nurbs::NURBS{<:Any, T1, T2, T3}, u::T4, d) where {T1, T2, T3, T4}
 
     if u > nurbs.knots[end] || u < nurbs.knots[1]
         error("parametric point, u, is outside of knot range, U")
     end
+
+    T = promote_type(T1, T2, T3, T4)
 
     # evaluate derivatives of A and w
     w = nurbs.weights
@@ -181,7 +183,7 @@ function curvederivatives(nurbs::NURBS, u, d)
 
     # initialize
     du = min(d, nurbs.degree)
-    CK = OffsetArray(Vector{Vector{Float64}}(undef, du+1), 0:du)
+    CK = OffsetArray(Vector{Vector{T}}(undef, du+1), 0:du)
 
     # algorithm A 4.2
     for k = 0:d
@@ -932,4 +934,3 @@ end
 # #     nh = mh-ph-1
 # #     return 0
 # # end
-
